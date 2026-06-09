@@ -1,6 +1,6 @@
 import sys
-from model.case import Case
-from model.grille import Grille
+from modele.case import Case
+from modele.grille import Grille
 
 # --------------------------------------------------------------------------------
 # --- class Controleur
