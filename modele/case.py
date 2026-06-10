@@ -32,8 +32,6 @@ class Case:
         """
         Setter pour modifier la valeur de la case.
         Lève une erreur si on tente de modifier une case fixe définie par défaut.
-
-        :param nouvelle_valeur: Le nouveau chiffre à placer dans la case.
         """
         if self.fixe:
             raise ValueError(f"La case ({self.x},{self.y}) est fixe et ne peut pas être modifiée")
