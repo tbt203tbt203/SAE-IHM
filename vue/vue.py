@@ -86,11 +86,15 @@ class VueNeonaure(QMainWindow):
         if chemin:
             self.modele.sauvegarder(chemin)
         
-app = QApplication(sys.argv)
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-grille = Grille.depuis_json(os.path.join(base_dir, "Annexes", "grille2.json"))
-appartenance_motifs = {(c.x, c.y): m.nom for m in grille.motifs for c in m.cases}
-valeurs = {(c.x, c.y): c.valeur for m in grille.motifs for c in m.cases if c.valeur != 0}
-fenetre = VueNeonaure(appartenance_motifs, valeurs, grille)
-fenetre.show()
-sys.exit(app.exec())
+        
+## test de la vue
+if __name__ == "__main__" :
+    print("TEST : classe vue")
+    app = QApplication(sys.argv)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    grille = Grille.depuis_json(os.path.join(base_dir, "Annexes", "grille2.json"))
+    appartenance_motifs = {(c.x, c.y): m.nom for m in grille.motifs for c in m.cases}
+    valeurs = {(c.x, c.y): c.valeur for m in grille.motifs for c in m.cases if c.valeur != 0}
+    fenetre = VueNeonaure(appartenance_motifs, valeurs, grille)
+    fenetre.show()
+    sys.exit(app.exec())
