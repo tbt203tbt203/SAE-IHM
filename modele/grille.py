@@ -240,20 +240,38 @@ class Grille:
     # Actions du joueur
     # ================================================================== #
 
-    def poser_valeur(self, x: int, y: int, valeur: int) -> None:
+    def poser_valeur(self, x: int, y: int, valeur: int, strict: bool = False) -> None:
         """
         Permet à un joueur de poser une valeur dans une case spécifique.
-        Lève une erreur si la case n'existe pas ou si la case est fixe.
+
+        Lève une erreur si :
+        - la case n'existe pas
+        - la case est fixe (donnée du puzzle)
+        - valeur n'est pas un entier
+        - valeur n'est pas compris entre 1 et la taille du motif (N)
+        - strict=True et valeur viole la règle de voisinage ou de motif
 
         :param x: La coordonnée x de la case.
         :param y: La coordonnée y de la case.
         :param valeur: La valeur entière à attribuer à la case.
+        :param strict: Si True, refuse la pose en cas de conflit avec un voisin ou le motif.
         """
         case = self.get_case(x, y)
         if case is None:
             raise ValueError(f"La case ({x},{y}) n'existe pas dans la grille.")
-        
-        case.valeur = valeur
+
+        if not isinstance(valeur, int):
+            raise TypeError(f"La valeur doit être un entier, reçu : {valeur!r}")
+
+        motif = self.motif_de(x, y)
+        taille = motif.taille if motif else max(self.largeur, self.hauteur)
+        if not (1 <= valeur <= taille):
+            raise ValueError(f"La valeur doit être comprise entre 1 et {taille} pour cette case.")
+
+        if strict and not self.valeur_valide_pour(x, y, valeur):
+            raise ValueError(f"La valeur {valeur} entre en conflit avec un voisin ou le motif.")
+
+        case.valeur = valeur  # lève ValueError si la case est fixe
 
     def effacer_valeur(self, x: int, y: int) -> None:
         """

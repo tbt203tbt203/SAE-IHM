@@ -86,11 +86,11 @@ class Controleur() :
             self.modele.effacer_valeur(case.x, case.y)
             # appeler vue !!!!
             
-    def chargerSauvegarder(self, chemin : str) -> None : 
-        """Charger un fichier JSON depuis le fichier sauvegarder"""
-        if self.modele : 
+    def chargerSauvegarder(self) -> None:
+        from PyQt6.QtWidgets import QFileDialog
+        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", "", "JSON (*.json)")
+        if self.modele and chemin:
             self.modele.charger_sauvegarde(chemin)
-            # appeler vue !!!!
             
             
     # def niveau(self, niveau : int) -> None :

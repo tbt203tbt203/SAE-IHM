@@ -102,6 +102,8 @@ class VueNeonaure(QMainWindow):
         
     
     sauvegarderClicked = pyqtSignal()
+    supprimerClicked = pyqtSignal()
+    
     def sauvegarder(self):
         self.sauvegarderClicked.emit()
         
