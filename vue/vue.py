@@ -63,8 +63,8 @@ def _charger_json(chemin):
 
 
 app = QApplication(sys.argv)
-base_dir = os.path.dirname(os.path.abspath(__file__))
-appartenance_motifs = _charger_json(os.path.join(base_dir, "json", "grille2.json"))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+appartenance_motifs = _charger_json(os.path.join(base_dir, "Annexes", "grille2.json"))
 fenetre = VueNeonaure(appartenance_motifs)
 fenetre.show()
 sys.exit(app.exec())
