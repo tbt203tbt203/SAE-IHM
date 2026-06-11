@@ -1,7 +1,9 @@
 import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modele.case import Case
 from modele.grille import Grille
 from vue.vue import VueNeonaure
+from PyQt6.QtWidgets import QApplication
 
 # --------------------------------------------------------------------------------
 # --- class Controleur
@@ -29,6 +31,7 @@ class Controleur() :
         #self.vue.changerGrilleClicked.connect(self.changer_grille)
         #self.vue.remplirClicked.connect(self.remplir)
         #self.vue.supprimerClicked.connect(self.supprimer)
+        self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
         
         # self.vue.niveauClicked.connect(self.niveau)
         
@@ -78,8 +81,27 @@ class Controleur() :
             self.modele.effacer_valeur(case.x, case.y)
             # appeler vue !!!!
             
+    def chargerSauvegarder(self, chemin : str) -> None : 
+        """Charger un fichier JSON depuis le fichier sauvegarder"""
+        if self.modele : 
+            self.modele.charger_sauvegarde(chemin)
+            # appeler vue !!!!
+            
             
     # def niveau(self, niveau : int) -> None :
     #     """Choisir un niveau"""
     #     if self.modele : 
     #         self.modele.
+    
+# -------------------------------------------------------------------------- #
+# --- Main YAY!! : test du controleur
+# -------------------------------------------------------------------------- #
+# if __name__ == "__main__" :
+    
+#     print("TEST : class controleur")
+    
+#     app = QApplication(sys.argv)
+    
+#     control = Controleur()
+    
+#     sys.exit(app.exec())
