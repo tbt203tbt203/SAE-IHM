@@ -27,7 +27,7 @@ class VueGrille(QWidget):
         for j in range(COLONNES + 1):
             painter.drawLine(MARGE + j * TAILLE_CELLULE, MARGE, MARGE + j * TAILLE_CELLULE, MARGE + LIGNES * TAILLE_CELLULE)
 
-        # bordures motifs
+        # bordures motifs (grosses lignes)
         painter.setPen(QPen(QColor(0, 0, 0), 3))
         cellules_par_motif = {}
         for (col, row), mid in self.appartenance_motifs.items():
@@ -75,21 +75,18 @@ class VueNeonaure(QMainWindow):
         self.setWindowTitle("Néonaure")
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
-        menu = self.menuBar().addMenu("Fichier")
+        menu = self.menuBar().addMenu("Menu")
+        menu.setStyleSheet("QMenu { background-color: black; color: white; border: 1px solid gray; } QMenu::item:selected { background-color: gray; color: white; } QMenu::item { padding: 4px 20px; }")
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
     
-    sauvegarderClicked = pyqtSignal(str)
-
+    sauvegarderClicked = pyqtSignal()
     def sauvegarder(self):
-        from PyQt6.QtWidgets import QFileDialog
-        chemin, _ = QFileDialog.getSaveFileName(self, "Sauvegarder", "", "JSON (*.json)")
-        if chemin:
-            self.sauvegarderClicked.emit(chemin)
+        self.sauvegarderClicked.emit()
         
         
-## test de la vue
-if __name__ == "__main__" :
+## test de la vue ancien main mtn > main.py
+'''if __name__ == "__main__" :
     print("TEST : classe vue")
     app = QApplication(sys.argv)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -98,4 +95,4 @@ if __name__ == "__main__" :
     valeurs = {(c.x, c.y): c.valeur for m in grille.motifs for c in m.cases if c.valeur != 0}
     fenetre = VueNeonaure(appartenance_motifs, valeurs, grille)
     fenetre.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec())'''
