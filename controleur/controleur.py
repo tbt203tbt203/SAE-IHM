@@ -1,7 +1,7 @@
 import os, sys
 from modele.case import Case
 from modele.grille import Grille
-from vue.
+from vue.vue import VueNeonaure
 
 # --------------------------------------------------------------------------------
 # --- class Controleur
@@ -10,19 +10,25 @@ from vue.
 class Controleur() :
     
     # constructeur 
-    def __init__(self) -> None : 
+    #def __init__(self) -> None : 
         
         # attributs 
-        self.modele = None
-        self.vue = None
+        #self.modele = None
+        #self.vue = None
+        
+    def __init__(self, chemin_json: str) -> None:
+        self.modele = Grille.depuis_json(chemin_json)
+        appartenance = {(c.x, c.y): m.nom for m in self.modele.motifs for c in m.cases}
+        valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+        self.vue = VueNeonaure(appartenance, valeurs)
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
-        self.vue.resoudreClicked.connect(self.resoudre)
-        self.vue.resetClicked.connect(self.reset)
-        self.vue.changerGrilleClicked.connect(self.changer_grille)
-        self.vue.remplirClicked.connect(self.remplir)
-        self.vue.supprimerClicked.connect(self.supprimer)
+        #self.vue.resoudreClicked.connect(self.resoudre)
+        #self.vue.resetClicked.connect(self.reset)
+        #self.vue.changerGrilleClicked.connect(self.changer_grille)
+        #self.vue.remplirClicked.connect(self.remplir)
+        #self.vue.supprimerClicked.connect(self.supprimer)
         
         # self.vue.niveauClicked.connect(self.niveau)
         
