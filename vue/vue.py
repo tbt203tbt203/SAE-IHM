@@ -79,10 +79,19 @@ class VueNeonaure(QMainWindow):
         menu.setStyleSheet("QMenu { background-color: black; color: white; border: 1px solid gray; } QMenu::item:selected { background-color: gray; color: white; } QMenu::item { padding: 4px 20px; }")
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
+        
+        action_supprimer = menu.addAction("Supprimer")
+        action_supprimer.triggered.connect(self.supprimer)
+    
     
     sauvegarderClicked = pyqtSignal()
+    supprimerClicked = pyqtSignal()
+    
     def sauvegarder(self):
         self.sauvegarderClicked.emit()
+        
+    def supprimer(self) : 
+        self.supprimerClicked.emit()
         
         
 ## test de la vue ancien main mtn > main.py
