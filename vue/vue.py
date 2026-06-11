@@ -1,13 +1,13 @@
-from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication
+from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor
-import sys, json, os
+import sys, os
+from modele.grille import Grille
 
 LIGNES = 8
 COLONNES = 8
 TAILLE_CELLULE = 60
 MARGE = 10
-
 
 class VueGrille(QWidget):
 
@@ -42,29 +42,55 @@ class VueGrille(QWidget):
 
         painter.drawRect(MARGE, MARGE, COLONNES * TAILLE_CELLULE, LIGNES * TAILLE_CELLULE)
 
+class VueGrilleAvecSaisie(QWidget):
 
+    def __init__(self, appartenance_motifs, valeurs={}):
+        super().__init__()
+        self.setFixedSize(COLONNES * TAILLE_CELLULE + 2 * MARGE, LIGNES * TAILLE_CELLULE + 2 * MARGE)
+        
+        # La grille dessinée en arrière-plan
+        self.grille = VueGrille(appartenance_motifs)
+        self.grille.setParent(self)
+        self.grille.move(0, 0)
+
+        # Les QLineEdit par-dessus
+        self.cases = {}
+        for i in range(LIGNES):
+            for j in range(COLONNES):
+                case = QLineEdit(self)
+                case.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                case.setMaxLength(1)
+                case.setFixedSize(TAILLE_CELLULE - 2, TAILLE_CELLULE - 2)
+                case.move(MARGE + j * TAILLE_CELLULE + 1, MARGE + i * TAILLE_CELLULE + 1)
+                case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+                self.cases[(i, j)] = case
+                if (j, i) in valeurs:
+                    case.setText(str(valeurs[(j, i)]))
+                    case.setReadOnly(True)
+                
 class VueNeonaure(QMainWindow):
 
-    def __init__(self, appartenance_motifs):
+    def __init__(self, appartenance_motifs, valeurs={}, modele=None):
         super().__init__()
         self.setWindowTitle("Néonaure")
-        self.grille = VueGrille(appartenance_motifs)
+        self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
+        self.modele = modele
         self.setCentralWidget(self.grille)
-
-
-def _charger_json(chemin):
-    appartenance = {}
-    with open(chemin) as f:
-        data = json.load(f)
-    for motif_id, cells in data.items():
-        for cell in cells:
-            appartenance[(cell[0], cell[1])] = motif_id
-    return appartenance
-
-
+        menu = self.menuBar().addMenu("Fichier")
+        action_sauvegarder = menu.addAction("Sauvegarder")
+        action_sauvegarder.triggered.connect(self.sauvegarder)
+    
+    def sauvegarder(self):
+        from PyQt6.QtWidgets import QFileDialog
+        chemin, _ = QFileDialog.getSaveFileName(self, "Sauvegarder", "", "JSON (*.json)")
+        if chemin:
+            self.modele.sauvegarder(chemin)
+        
 app = QApplication(sys.argv)
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-appartenance_motifs = _charger_json(os.path.join(base_dir, "Annexes", "grille2.json"))
-fenetre = VueNeonaure(appartenance_motifs)
+grille = Grille.depuis_json(os.path.join(base_dir, "Annexes", "grille2.json"))
+appartenance_motifs = {(c.x, c.y): m.nom for m in grille.motifs for c in m.cases}
+valeurs = {(c.x, c.y): c.valeur for m in grille.motifs for c in m.cases if c.valeur != 0}
+fenetre = VueNeonaure(appartenance_motifs, valeurs, grille)
 fenetre.show()
 sys.exit(app.exec())
