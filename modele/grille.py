@@ -91,6 +91,37 @@ class Grille:
         with open(chemin, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
             
+    def reset(self) -> None:
+        """
+        Remet toutes les cases non fixes de la grille à leur état initial (vide, valeur 0).
+        Les indices de départ (cases fixes) ne sont pas modifiés.
+        """
+        for case in self._cases.values():
+            if not case.fixe:
+                case._valeur = 0
+
+    def charger_sauvegarde(self, chemin_sauvegarde: str) -> None:
+        """
+        Charge un fichier de sauvegarde par-dessus la grille actuelle.
+        Seules les cases non fixes reçoivent les valeurs enregistrées.
+        Le fichier JSON doit respecter le format standard de grille.
+
+        :param chemin_sauvegarde: Le chemin du fichier JSON de sauvegarde.
+        """
+        with open(chemin_sauvegarde, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Parcours de chaque motif et des cellules enregistrées dans la sauvegarde
+        for nom_motif, cellules in data.items():
+            for cell in cellules:
+                x, y, valeur = cell
+                case = self.get_case(x, y)
+                
+                # On met à jour la valeur uniquement si la case existe et n'est pas fixe
+                if case and not case.fixe:
+                    case.valeur = valeur
+
+            
     # ================================================================== #
     # Accès aux cases
     # ================================================================== #
