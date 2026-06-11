@@ -29,10 +29,10 @@ class Controleur() :
         #self.vue.resoudreClicked.connect(self.resoudre)
         #self.vue.resetClicked.connect(self.reset)
         #self.vue.changerGrilleClicked.connect(self.changer_grille)
-        #self.vue.remplirClicked.connect(self.remplir)
-        #self.vue.supprimerClicked.connect(self.supprimer)
+        self.vue.supprimerClicked.connect(self.supprimer)
         #self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
-        
+        self.vue.grille.caseModifiee.connect(self.remplir)
+
         # self.vue.niveauClicked.connect(self.niveau)
         
         
@@ -46,6 +46,7 @@ class Controleur() :
         chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", "", "JSON (*.json)")
         if self.modele and chemin:
             self.modele.sauvegarder(chemin)
+            
                             
     def resoudre(self) -> None : 
         """Résout la grille et mettre à jour la vue"""
@@ -66,25 +67,20 @@ class Controleur() :
         self.modele = Grille.depuis_json(chemin)
         # appeler vue !!!!
         
-        
-    # à modifier plus tard pour la gestion d'erreur
-    def remplir(self, case : Case, valeur : int) -> None : 
-        """Mettre une valeur dans une case"""
-        if self.modele : 
-            try : 
-                self.modele.poser_valeur(case.x, case.y, valeur)
-                # appeler vue !!!!
-                return True
-            except ValueError : 
-                return False
-        return False
+            
+    def remplir(self, x: int, y: int, texte: str) -> None:
+        if self.modele and texte.isdigit():
+            try:
+                self.modele.poser_valeur(x, y, int(texte))
+            except ValueError:
+                pass
         
         
     def supprimer(self, case : Case) -> None :
-        """Effacer une valeur dans une case"""
+        """Effacer un fichier dans le dossier sauvegarder"""
         if self.modele : 
             self.modele.effacer_valeur(case.x, case.y)
-            # appeler vue !!!!
+            
             
     def chargerSauvegarder(self) -> None:
         from PyQt6.QtWidgets import QFileDialog
