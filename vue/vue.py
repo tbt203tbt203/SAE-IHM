@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor
 import sys, os
-from modele.grille import Grille
+from PyQt6.QtCore import Qt, pyqtSignal
 
 LIGNES = 8
 COLONNES = 8
@@ -74,17 +74,18 @@ class VueNeonaure(QMainWindow):
         super().__init__()
         self.setWindowTitle("Néonaure")
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
-        self.modele = modele
         self.setCentralWidget(self.grille)
         menu = self.menuBar().addMenu("Fichier")
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
     
+    sauvegarderClicked = pyqtSignal(str)
+
     def sauvegarder(self):
         from PyQt6.QtWidgets import QFileDialog
         chemin, _ = QFileDialog.getSaveFileName(self, "Sauvegarder", "", "JSON (*.json)")
         if chemin:
-            self.modele.sauvegarder(chemin)
+            self.sauvegarderClicked.emit(chemin)
         
         
 ## test de la vue
