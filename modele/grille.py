@@ -90,3 +90,56 @@ class Grille:
         # Écriture dans le fichier
         with open(chemin, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            
+    # ================================================================== #
+    # Accès aux cases
+    # ================================================================== #
+
+    def get_case(self, x: int, y: int) -> Case | None:
+        """
+        Récupère la case située aux coordonnées (x, y).
+
+        :param x: L'indice de colonne.
+        :param y: L'indice de ligne.
+        :return: L'objet Case correspondant, ou None si les coordonnées sont hors limites.
+        """
+        return self._cases.get((x, y))
+
+    def get_voisins(self, x: int, y: int) -> list[Case]:
+        """
+        Retourne la liste des cases adjacentes à la position (x, y)
+        en incluant les 8 directions (haut, bas, gauche, droite et diagonales).
+
+        :param x: La coordonnée x de la case centrale.
+        :param y: La coordonnée y de la case centrale.
+        :return: Une liste de cases voisines existantes.
+        """
+        voisins = []
+        
+        # Parcours des décalages possibles sur X et Y (-1, 0, 1)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                # Ignore la case centrale
+                if dx == 0 and dy == 0:
+                    continue
+                
+                # Récupération de la case voisine si elle existe dans la grille
+                case_voisine = self.get_case(x + dx, y + dy)
+                if case_voisine:
+                    voisins.append(case_voisine)
+                    
+        return voisins
+
+    def motif_de(self, x: int, y: int) -> Motif | None:
+        """
+        Recherche et retourne le motif auquel appartient la case aux coordonnées (x, y).
+
+        :param x: La coordonnée x de la case recherchée.
+        :param y: La coordonnée y de la case recherchée.
+        :return: L'objet Motif associé, ou None si non trouvé.
+        """
+        for motif in self.motifs:
+            for case in motif.cases:
+                if case.x == x and case.y == y:
+                    return motif
+        return None
