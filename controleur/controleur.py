@@ -31,16 +31,21 @@ class Controleur() :
         #self.vue.changerGrilleClicked.connect(self.changer_grille)
         #self.vue.remplirClicked.connect(self.remplir)
         #self.vue.supprimerClicked.connect(self.supprimer)
-        self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
+        #self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
         
         # self.vue.niveauClicked.connect(self.niveau)
         
         
-    def sauvegarder(self, chemin : str) -> None : 
-        """Sauvegarde la grille actuelle en JSON"""
+    """def sauvegarder(self, chemin : str) -> None : 
         if self.modele and chemin :
-            self.modele.sauvegarder(chemin)
+            self.modele.sauvegarder(chemin)"""
            
+           
+    def sauvegarder(self) -> None:
+        from PyQt6.QtWidgets import QFileDialog
+        chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", "", "JSON (*.json)")
+        if self.modele and chemin:
+            self.modele.sauvegarder(chemin)
                             
     def resoudre(self) -> None : 
         """Résout la grille et mettre à jour la vue"""
