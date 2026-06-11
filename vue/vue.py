@@ -3,6 +3,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor
 import sys, os
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QPushButton
+
 
 LIGNES = 8
 COLONNES = 8
@@ -43,6 +45,8 @@ class VueGrille(QWidget):
         painter.drawRect(MARGE, MARGE, COLONNES * TAILLE_CELLULE, LIGNES * TAILLE_CELLULE)
 
 class VueGrilleAvecSaisie(QWidget):
+    caseModifiee = pyqtSignal(int, int, str)
+
 
     def __init__(self, appartenance_motifs, valeurs={}):
         super().__init__()
@@ -64,6 +68,7 @@ class VueGrilleAvecSaisie(QWidget):
                 case.move(MARGE + j * TAILLE_CELLULE + 1, MARGE + i * TAILLE_CELLULE + 1)
                 case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
                 self.cases[(i, j)] = case
+                case.textChanged.connect(lambda texte, x=j, y=i: self.caseModifiee.emit(x, y, texte))
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
@@ -79,12 +84,44 @@ class VueNeonaure(QMainWindow):
         menu.setStyleSheet("QMenu { background-color: black; color: white; border: 1px solid gray; } QMenu::item:selected { background-color: gray; color: white; } QMenu::item { padding: 4px 20px; }")
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
+        action_charger = menu.addAction("Charger")
+        action_charger.triggered.connect(self.charger)
+        action_reset = menu.addAction("Reset")
+        action_reset.triggered.connect(self.reset)
+        btn_reset = QPushButton("↺")
+        btn_reset.setFlat(True)
+        btn_reset.clicked.connect(self.reset)
+        self.menuBar().setCornerWidget(btn_reset)
+        action_supprimer = menu.addAction("Supprimer")
+        action_supprimer.triggered.connect(self.supprimer)
+
+
+    supprimerClicked = pyqtSignal()
+    def supprimer(self) : 
+        self.supprimerClicked.emit()
+        
     
     sauvegarderClicked = pyqtSignal()
     def sauvegarder(self):
         self.sauvegarderClicked.emit()
         
+    chargerSauvegarderClicked = pyqtSignal()
+    def charger(self):
+        self.chargerSauvegarderClicked.emit()
         
+        
+    def mettre_a_jour(self, valeurs):
+        for (i, j), case in self.grille.cases.items():
+            if (j, i) in valeurs:
+                case.setText(str(valeurs[(j, i)]))
+            else:
+                if not case.isReadOnly():
+                    case.setText("")
+                    
+    resetClicked = pyqtSignal()
+    def reset(self):
+        self.resetClicked.emit()
+           
 ## test de la vue ancien main mtn > main.py
 '''if __name__ == "__main__" :
     print("TEST : classe vue")
