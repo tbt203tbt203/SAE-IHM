@@ -143,3 +143,94 @@ class Grille:
                 if case.x == x and case.y == y:
                     return motif
         return None
+    
+    # ================================================================== #
+    # Validation des règles du jeu
+    # ================================================================== #
+
+    def voisinage_valide(self, x: int, y: int) -> bool:
+        """
+        Vérifie la règle de voisinage pour la case (x, y).
+        La valeur de cette case ne doit pas se retrouver dans ses 8 voisins directs.
+        Si la case est vide, elle est considérée valide.
+
+        :param x: La coordonnée x de la case à vérifier.
+        :param y: La coordonnée y de la case à vérifier.
+        :return: True si aucun problème de valeur n'est détecté avec les voisins, False sinon.
+        """
+        case = self.get_case(x, y)
+        if not case or case.est_vide():
+            return True
+
+        # Récupération de l'ensemble des valeurs des voisins non vides
+        valeurs_voisins = set()
+        for v in self.get_voisins(x, y):
+            if not v.est_vide():
+                valeurs_voisins.add(v.valeur)
+
+        # La règle est respectée si la valeur de la case n'est pas dans le set des voisins
+        return case.valeur not in valeurs_voisins
+
+    def est_valide(self) -> bool:
+        """
+        Vérifie si toutes les règles du jeu sont respectées sur l'ensemble de la grille.
+        Contrôle la règle de voisinage pour chaque case et la validité de chaque motif.
+
+        :return: True si la grille entière respecte les règles, False sinon.
+        """
+        # 1. Vérification de la règle de voisinage pour toutes les cases
+        for (x, y) in self._cases:
+            if not self.voisinage_valide(x, y):
+                return False
+
+        # 2. Vérification que chaque motif n'a pas de doublons ou de valeurs invalides
+        tous_les_motifs_valides = all(m.est_valide() for m in self.motifs)
+        
+        return tous_les_motifs_valides
+
+    def est_complete(self) -> bool:
+        """
+        Indique si la grille est entièrement remplie, valide et résolue.
+        
+        :return: True si toutes les cases sont remplies et la grille est valide, False sinon.
+        """
+        # Toutes les cases doivent être non vides
+        toutes_remplies = all(not c.est_vide() for c in self._cases.values())
+        
+        # Tous les motifs doivent contenir exactement la séquence de 1 à N
+        tous_motifs_complets = all(m.est_complet() for m in self.motifs)
+        
+        # La grille globale doit respecter les règles de voisinage
+        grille_valide = self.est_valide()
+
+        return toutes_remplies and tous_motifs_complets and grille_valide
+
+    # ================================================================== #
+    # Actions du joueur
+    # ================================================================== #
+
+    def poser_valeur(self, x: int, y: int, valeur: int) -> None:
+        """
+        Permet à un joueur de poser une valeur dans une case spécifique.
+        Lève une erreur si la case n'existe pas ou si la case est fixe.
+
+        :param x: La coordonnée x de la case.
+        :param y: La coordonnée y de la case.
+        :param valeur: La valeur entière à attribuer à la case.
+        """
+        case = self.get_case(x, y)
+        if case is None:
+            raise ValueError(f"La case ({x},{y}) n'existe pas dans la grille.")
+        
+        case.valeur = valeur
+
+    def effacer_valeur(self, x: int, y: int) -> None:
+        """
+        Efface la valeur d'une case si celle-ci n'est pas une case fixe.
+
+        :param x: La coordonnée x de la case.
+        :param y: La coordonnée y de la case.
+        """
+        case = self.get_case(x, y)
+        if case and not case.fixe:
+            case._valeur = 0
