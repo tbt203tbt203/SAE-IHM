@@ -3,6 +3,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
 from PyQt6.QtWidgets import QPushButton
 import sys, os
+from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QSizePolicy, QMenuBar
 
 
 TAILLE_CELLULE = 60
@@ -169,7 +170,17 @@ class VueNeonaure(QMainWindow):
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
         btn_reset.clicked.connect(self.reset)
-        self.menuBar().setCornerWidget(btn_reset)
+        #self.menuBar().setCornerWidget(btn_reset)
+        
+        btn_resoudre = QPushButton("💡")
+        btn_resoudre.setFlat(True)
+        btn_resoudre.clicked.connect(self.resoudre)
+        coin = QWidget()
+        layout = QHBoxLayout(coin)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(btn_resoudre)
+        layout.addWidget(btn_reset)
+        self.menuBar().setCornerWidget(coin)
 
         action_supprimer = menu.addAction("Supprimer")
         action_supprimer.triggered.connect(self.supprimer)
@@ -228,6 +239,9 @@ class VueNeonaure(QMainWindow):
             couleur = None if valide else COULEUR_INVALIDE
             self.grille.set_couleur_case(x, y, couleur)
 
+
+    def set_titre(self, nom_grille: str, nom_sauvegarde: str = None):
+        self.setWindowTitle(f"Néonaure - {nom_grille}  |  {nom_sauvegarde or '---'}")
 
 ## test de la vue YAYYY !!!
 '''if __name__ == "__main__" :
