@@ -87,18 +87,27 @@ class Controleur() :
             self.vue.colorier_case(x, y, valide)
         
             
-    def chargerSauvegarder(self) -> None:
-        """Charger un fichier depuis le dossier sauvegarder"""
-        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
-        if chemin : 
-            self.modele = Grille.charger_sauvegarde(chemin)
-            appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
-            valeurs = {(c.x, c.y) : c.valeur for m in self.modele.motifs for c in m.cases if c.valeurs != 0}
+    # def chargerSauvegarder(self) -> None:
+    #     """Charger un fichier depuis le dossier sauvegarder"""
+    #     chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
+    #     if chemin : 
+    #         self.modele = Grille.charger_sauvegarde(chemin)
+    #         appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
+    #         valeurs = {(c.x, c.y) : c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
             
-            self.vue.grille.caseModifiee.disconnect(self.modifierCase)
-            self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
-            self.vue.setCentralWidget(self.vue.grille)
-            self.vue.grille.caseModifiee.connect(self.modifierCase)
+    #         self.vue.grille.caseModifiee.disconnect(self.modifierCase)
+    #         self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
+    #         self.vue.setCentralWidget(self.vue.grille)
+    #         self.vue.grille.caseModifiee.connect(self.modifierCase)
+            
+            
+    def chargerSauvegarder(self) -> None:
+        """Charger une sauvegarde (progression) sur la grille en cours"""
+        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
+        if self.modele and chemin:
+            self.modele.charger_sauvegarde(chemin)
+            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            self.vue.mettre_a_jour(valeurs)
             
             
     def supprimer(self) -> None :
