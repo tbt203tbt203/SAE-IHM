@@ -345,3 +345,73 @@ class Grille:
         case = self.get_case(x, y)
         if case and not case.fixe:
             case._valeur = 0
+
+
+
+    # ------------------------------------------------------------------ #
+    # Résolution par backtracking
+    # ------------------------------------------------------------------ #
+
+    def resoudre(self) -> bool:
+        """Lance le solveur. Retourne True si une solution a été trouvée."""
+        vides = [c for c in self._cases.values() if c.est_vide()]
+        return self._backtrack(vides, 0)
+
+    def _backtrack(self, vides: list[Case], index: int) -> bool:
+        if index == len(vides):
+            return True
+
+        case = vides[index]
+        motif = self.motif_de(case.x, case.y)
+        taille = motif.taille if motif else max(self.largeur, self.hauteur)
+        
+        utilisees_motif = {c.valeur for c in motif.cases
+                           if c.valeur != 0 and (c.x, c.y) != (case.x, case.y)}
+        
+        valeurs_voisins = {v.valeur for v in self.get_voisins(case.x, case.y) if not v.est_vide()}
+
+        for valeur in range(1, taille + 1):
+            if valeur in utilisees_motif:
+                continue
+            if valeur in valeurs_voisins:
+                continue
+
+            case._valeur = valeur  # accès direct pour contourner la protection fixe
+            if self._backtrack(vides, index + 1):
+                return True
+            case._valeur = 0
+
+        return False
+
+    def __repr__(self) -> str:
+        return f"Grille({self.largeur}x{self.hauteur}, {len(self.motifs)} motifs)"
+    
+    def resoudreTest(self) -> bool : 
+        """Resoudre une grille en inspirant de la coloration du graphe"""
+                    
+        vides = [c for c in self._cases.values() if c.est_vide()]
+        vides.sort(key=lambda c: len(self.get_voisins(c.x, c.y)), reverse=True)
+        
+        return self._backtrack(vides, 0)
+    
+    def construire_graphe(self) -> dict : 
+        """Construit le graphe d'adjacence de la grille"""
+        graphe = {}
+        for (x, y) in self._cases : 
+            graphe[(x, y)] = [
+                (v.x, v.y) for v in self.get_voisins(x, y)
+            ]
+        return graphe
+
+    def trier_par_degre(self, graphe : dict) -> list :
+        """Trie les cases vides par nombre de voisins de décroissant"""
+        vides = [c for c in self._cases.values() if c.est_vide()]
+        return sorted(vides, 
+                     key=lambda c: len(graphe[(c.x, c.y)]),
+                        reverse=True)
+           
+    def resoudre_coloration(self) -> bool :
+        """Résout la grille en utilisant l'ordre coloration"""
+        graphe = self.construire_graphe()
+        vides = self.trier_par_degre(graphe)
+        return self._backtrack(vides, 0)
