@@ -1,0 +1,20 @@
+{
+  "grille_originale": "grille1.json",
+  "coups_joueur": [
+    [
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      2
+    ],
+    [
+      3,
+      0,
+      3
+    ]
+  ]
+}

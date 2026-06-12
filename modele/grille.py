@@ -73,19 +73,22 @@ class Grille:
 
         return cls(largeur_grille, hauteur_grille, motifs)
 
-    def sauvegarder(self, chemin: str) -> None:
+    def sauvegarder(self, chemin: str, nom_fichier_original : str = "") -> None:
         """
         Sauvegarde l'état actuel de la grille dans un fichier JSON.
 
         :param chemin: Le chemin vers le fichier JSON de destination.
         """
         # Reconstruction de la structure de données attendue
-        data = {}
+        data = {
+            "grille_originale" : nom_fichier_original,
+            "coups_joueur": []
+        }
         for motif in self.motifs:
-            cellules_motif = []
             for c in motif.cases:
-                cellules_motif.append([c.x, c.y, c.valeur])
-            data[motif.nom] = cellules_motif
+                # On ne sauvegarde  que les cases remplies par le joueur
+                if not c.fixe and not c.est_vide():
+                    data["coups_joueur"].append([c.x, c.y, c.valeur])
 
         # Écriture dans le fichier
         with open(chemin, "w", encoding="utf-8") as f:
@@ -100,26 +103,26 @@ class Grille:
             if not case.fixe:
                 case._valeur = 0
 
-    def charger_sauvegarde(self, chemin_sauvegarde: str) -> None:
-        """
-        Charge un fichier de sauvegarde par-dessus la grille actuelle.
-        Seules les cases non fixes reçoivent les valeurs enregistrées.
-        Le fichier JSON doit respecter le format standard de grille.
+    # def charger_sauvegarde(self, chemin_sauvegarde: str) -> None:
+    #     """
+    #     Charge un fichier de sauvegarde par-dessus la grille actuelle.
+    #     Seules les cases non fixes reçoivent les valeurs enregistrées.
+    #     Le fichier JSON doit respecter le format standard de grille.
 
-        :param chemin_sauvegarde: Le chemin du fichier JSON de sauvegarde.
-        """
-        with open(chemin_sauvegarde, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    #     :param chemin_sauvegarde: Le chemin du fichier JSON de sauvegarde.
+    #     """
+    #     with open(chemin_sauvegarde, "r", encoding="utf-8") as f:
+    #         data = json.load(f)
 
-        # Parcours de chaque motif et des cellules enregistrées dans la sauvegarde
-        for nom_motif, cellules in data.items():
-            for cell in cellules:
-                x, y, valeur = cell
-                case = self.get_case(x, y)
+    #     # Parcours de chaque motif et des cellules enregistrées dans la sauvegarde
+    #     for nom_motif, cellules in data.items():
+    #         for cell in cellules:
+    #             x, y, valeur = cell
+    #             case = self.get_case(x, y)
                 
-                # On met à jour la valeur uniquement si la case existe et n'est pas fixe
-                if case and not case.fixe:
-                    case.valeur = valeur
+    #             # On met à jour la valeur uniquement si la case existe et n'est pas fixe
+    #             if case and not case.fixe:
+    #                 case.valeur = valeur
 
             
     # ================================================================== #
@@ -219,6 +222,8 @@ class Grille:
         
         return tous_les_motifs_valides
 
+
+
     def est_complete(self) -> bool:
         """
         Indique si la grille est entièrement remplie, valide et résolue.
@@ -235,6 +240,63 @@ class Grille:
         grille_valide = self.est_valide()
 
         return toutes_remplies and tous_motifs_complets and grille_valide
+    
+    
+
+    def valeur_valide_pour(self, x: int, y: int, valeur: int) -> bool:
+        """
+        Vérifie si `valeur` peut être posée en (x, y) sans créer de conflit
+        (ni avec les 8 voisins, ni avec les autres cases du même motif).
+
+        :param x: La coordonnée x de la case visée.
+        :param y: La coordonnée y de la case visée.
+        :param valeur: La valeur que l'on souhaite tester.
+        :return: True si aucun conflit n'est détecté, False sinon.
+        """
+        # Conflit avec une autre case du même motif
+        motif = self.motif_de(x, y)
+        if motif:
+            autres_valeurs = {
+                c.valeur for c in motif.cases
+                if (c.x, c.y) != (x, y) and not c.est_vide()
+            }
+            if valeur in autres_valeurs:
+                return False
+
+        # Conflit avec un voisin
+        valeurs_voisins = {v.valeur for v in self.get_voisins(x, y) if not v.est_vide()}
+        return valeur not in valeurs_voisins
+
+
+
+
+    def cases_invalides(self) -> set[tuple[int, int]]:
+        """
+        Détermine les coordonnées de toutes les cases en conflit
+        (voisinage identique ou doublon dans un motif).
+
+        :return: Un ensemble de tuples (x, y) des cases en conflit.
+        """
+        invalides = set()
+
+        # Conflits de voisinage
+        for (x, y), case in self._cases.items():
+            if not case.est_vide() and not self.voisinage_valide(x, y):
+                invalides.add((x, y))
+
+        # Doublons au sein d'un même motif
+        for motif in self.motifs:
+            valeurs_vues: dict[int, tuple[int, int]] = {}
+            for c in motif.cases:
+                if c.est_vide():
+                    continue
+                if c.valeur in valeurs_vues:
+                    invalides.add((c.x, c.y))
+                    invalides.add(valeurs_vues[c.valeur])
+                else:
+                    valeurs_vues[c.valeur] = (c.x, c.y)
+
+        return invalides
 
     # ================================================================== #
     # Actions du joueur
