@@ -1,185 +1,235 @@
 from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
-import sys, os
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
 from PyQt6.QtWidgets import QPushButton
+import sys, os
 
 
-LIGNES = 8
-COLONNES = 8
 TAILLE_CELLULE = 60
 MARGE = 10
+
+COULEUR_FIXE     = QColor(224, 224, 224)   
+COULEUR_INVALIDE = QColor(255, 204, 204)   
+COULEUR_VIDE     = QColor(255, 255, 255)   
+
+
+def _dimensions(appartenance_motifs: dict) -> tuple[int, int]:
+    """Déduit (colonnes, lignes) depuis les coordonnées du dict appartenance_motifs."""
+    if not appartenance_motifs:
+        return 1, 1
+    cols = max(c for c, _ in appartenance_motifs) + 1
+    rows = max(r for _, r in appartenance_motifs) + 1
+    return cols, rows
 
 
 
 class VueGrille(QWidget):
+    """
+    Couche de dessin pure : fonds colorés, petites lignes, bordures de motifs.
+    Tout est peint ici dans paintEvent, donc les lignes sont TOUJOURS au-dessus
+    des fonds — aucun widget ne peut les cacher.
+    """
 
-    def __init__(self, appartenance_motifs):
+    def __init__(self, appartenance_motifs: dict):
         super().__init__()
         self.appartenance_motifs = appartenance_motifs
-        self.setFixedSize(COLONNES * TAILLE_CELLULE + 2 * MARGE, LIGNES * TAILLE_CELLULE + 2 * MARGE)
+        self.colonnes, self.lignes = _dimensions(appartenance_motifs)
+        self.setFixedSize(
+            self.colonnes * TAILLE_CELLULE + 2 * MARGE,
+            self.lignes   * TAILLE_CELLULE + 2 * MARGE,
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setStyleSheet("background: transparent;")
+
+        self.couleurs: dict[tuple[int, int], QColor] = {}
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(255, 255, 255))
 
-        # petites lignes
+        painter.fillRect(self.rect(), COULEUR_VIDE)
+
+        for (col, row), couleur in self.couleurs.items():
+            x = MARGE + col * TAILLE_CELLULE
+            y = MARGE + row * TAILLE_CELLULE
+            painter.fillRect(x, y, TAILLE_CELLULE, TAILLE_CELLULE, couleur)
+
         painter.setPen(QPen(QColor(190, 190, 190), 1))
-        for i in range(LIGNES + 1):
-            painter.drawLine(MARGE, MARGE + i * TAILLE_CELLULE, MARGE + COLONNES * TAILLE_CELLULE, MARGE + i * TAILLE_CELLULE)
-        for j in range(COLONNES + 1):
-            painter.drawLine(MARGE + j * TAILLE_CELLULE, MARGE, MARGE + j * TAILLE_CELLULE, MARGE + LIGNES * TAILLE_CELLULE)
+        for i in range(self.lignes + 1):
+            painter.drawLine(
+                MARGE, MARGE + i * TAILLE_CELLULE,
+                MARGE + self.colonnes * TAILLE_CELLULE, MARGE + i * TAILLE_CELLULE,
+            )
+        for j in range(self.colonnes + 1):
+            painter.drawLine(
+                MARGE + j * TAILLE_CELLULE, MARGE,
+                MARGE + j * TAILLE_CELLULE, MARGE + self.lignes * TAILLE_CELLULE,
+            )
 
-        # bordures motifs (grosses lignes)
         painter.setPen(QPen(QColor(0, 0, 0), 3))
-        cellules_par_motif = {}
+        cellules_par_motif: dict[str, set] = {}
         for (col, row), mid in self.appartenance_motifs.items():
             cellules_par_motif.setdefault(mid, set()).add((col, row))
+
         for cellules in cellules_par_motif.values():
             for (col, row) in cellules:
-                x, y = MARGE + col * TAILLE_CELLULE, MARGE + row * TAILLE_CELLULE
-                if (col, row - 1) not in cellules: painter.drawLine(x, y, x + TAILLE_CELLULE, y)
-                if (col, row + 1) not in cellules: painter.drawLine(x, y + TAILLE_CELLULE, x + TAILLE_CELLULE, y + TAILLE_CELLULE)
-                if (col - 1, row) not in cellules: painter.drawLine(x, y, x, y + TAILLE_CELLULE)
-                if (col + 1, row) not in cellules: painter.drawLine(x + TAILLE_CELLULE, y, x + TAILLE_CELLULE, y + TAILLE_CELLULE)
+                x = MARGE + col * TAILLE_CELLULE
+                y = MARGE + row * TAILLE_CELLULE
+                if (col, row - 1) not in cellules:
+                    painter.drawLine(x, y, x + TAILLE_CELLULE, y)
+                if (col, row + 1) not in cellules:
+                    painter.drawLine(x, y + TAILLE_CELLULE, x + TAILLE_CELLULE, y + TAILLE_CELLULE)
+                if (col - 1, row) not in cellules:
+                    painter.drawLine(x, y, x, y + TAILLE_CELLULE)
+                if (col + 1, row) not in cellules:
+                    painter.drawLine(x + TAILLE_CELLULE, y, x + TAILLE_CELLULE, y + TAILLE_CELLULE)
 
-        painter.drawRect(MARGE, MARGE, COLONNES * TAILLE_CELLULE, LIGNES * TAILLE_CELLULE)
+        painter.drawRect(MARGE, MARGE, self.colonnes * TAILLE_CELLULE, self.lignes * TAILLE_CELLULE)
 
 
 
 class VueGrilleAvecSaisie(QWidget):
-    
+
     caseModifiee = pyqtSignal(int, int, str)
 
-    def __init__(self, appartenance_motifs, valeurs={}):
+    def __init__(self, appartenance_motifs: dict, valeurs: dict = {}):
         super().__init__()
-        self.setFixedSize(COLONNES * TAILLE_CELLULE + 2 * MARGE, LIGNES * TAILLE_CELLULE + 2 * MARGE)
-        
-        # La grille dessinée en arrière-plan
+        colonnes, lignes = _dimensions(appartenance_motifs)
+        self.setFixedSize(
+            colonnes * TAILLE_CELLULE + 2 * MARGE,
+            lignes   * TAILLE_CELLULE + 2 * MARGE,
+        )
+
         self.grille = VueGrille(appartenance_motifs)
         self.grille.setParent(self)
         self.grille.move(0, 0)
+        self.grille.lower()  
 
-        # Les QLineEdit par-dessus
-        self.cases = {}
-        for i in range(LIGNES):
-            for j in range(COLONNES):
+        val_max = max(colonnes, lignes)
+
+        self.cases: dict[tuple[int, int], QLineEdit] = {}
+        for i in range(lignes):
+            for j in range(colonnes):
                 case = QLineEdit(self)
-                case.setValidator(QIntValidator(1, 9))
+                case.setValidator(QIntValidator(1, val_max))
                 case.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 case.setMaxLength(1)
-                case.setFixedSize(TAILLE_CELLULE - 2, TAILLE_CELLULE - 2)
-                case.move(MARGE + j * TAILLE_CELLULE + 1, MARGE + i * TAILLE_CELLULE + 1)
+                case.setFixedSize(TAILLE_CELLULE, TAILLE_CELLULE)
+                case.move(MARGE + j * TAILLE_CELLULE, MARGE + i * TAILLE_CELLULE)
                 case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
                 self.cases[(i, j)] = case
                 case.textChanged.connect(lambda texte, x=j, y=i: self.caseModifiee.emit(x, y, texte))
+
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
-                    case.setStyleSheet("background: #e0e0e0; border: none; font-size: 20px; color: #555555;")  # ← gris
-    
-    
-               
+                    self.grille.couleurs[(j, i)] = COULEUR_FIXE
+                    case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
+
+
+    def set_couleur_case(self, col: int, row: int, couleur: QColor | None) -> None:
+        """
+        Met à jour la couleur de fond d'une case dans VueGrille et force le repaint.
+        Passer couleur=None remet la case en blanc (état normal).
+        """
+        if couleur is None:
+            self.grille.couleurs.pop((col, row), None)
+        else:
+            self.grille.couleurs[(col, row)] = couleur
+        self.grille.update()
+
+
+
 class VueNeonaure(QMainWindow):
 
-    def __init__(self, appartenance_motifs, valeurs={}, modele=None):
+    def __init__(self, appartenance_motifs: dict, valeurs: dict = {}, modele=None):
         super().__init__()
-        
+
         self.setWindowTitle("Néonaure")
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
-        
+
         menu = self.menuBar().addMenu("Menu")
-        menu.setStyleSheet("QMenu { background-color: black; color: white; border: 1px solid gray; } QMenu::item:selected { background-color: gray; color: white; } QMenu::item { padding: 4px 20px; }")
-        
-        # bouton sauvegarder (fichier JSON)
+        menu.setStyleSheet(
+            "QMenu { background-color: black; color: white; border: 1px solid gray; }"
+            "QMenu::item:selected { background-color: gray; color: white; }"
+            "QMenu::item { padding: 4px 20px; }"
+        )
+
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
-        
-        # bouton charger (fichier JSON depuis le doissier sauvegarder)
+
         action_charger = menu.addAction("Charger")
         action_charger.triggered.connect(self.charger)
-        
-        # bouton jouer (fichier JSON depuis le dossier Annexes)
+
         action_jouer = menu.addAction("Jouer")
         action_jouer.triggered.connect(self.changerGrille)
-        
-        # bouton reset (l'état initial de grille)
+
         action_reset = menu.addAction("Reset")
         action_reset.triggered.connect(self.reset)
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
         btn_reset.clicked.connect(self.reset)
         self.menuBar().setCornerWidget(btn_reset)
-        
-        # bouton supprimer (un fichier JSON depuis le dossier sauvegarder)
+
         action_supprimer = menu.addAction("Supprimer")
         action_supprimer.triggered.connect(self.supprimer)
-        
-        # bouton resoudre (proposer une solution compléte de grille)
+
         action_resoudre = menu.addAction("Resoudre")
         action_resoudre.triggered.connect(self.resoudre)
 
 
     supprimerClicked = pyqtSignal()
-    def supprimer(self) : 
+    def supprimer(self):
         """Supprimer un fichier dans le dossier sauvegarder"""
         self.supprimerClicked.emit()
-        
-    
-    sauvegarderClicked = pyqtSignal()    
+
+    sauvegarderClicked = pyqtSignal()
     def sauvegarder(self):
         """Sauvegarde un fichier JSON dans le dossier sauvegarder"""
         self.sauvegarderClicked.emit()
-        
-        
-    # charger un fichier json depuis Annexes ou Sauvegarde ? 
+
     chargerSauvegarderClicked = pyqtSignal()
     def charger(self):
         """Charger un fichier JSON depuis le dossier sauvegarder"""
         self.chargerSauvegarderClicked.emit()
-        
-        
+
     changerGrilleClicked = pyqtSignal()
-    def changerGrille(self) : 
+    def changerGrille(self):
         """Charger un fichier JSON depuis le dossier Annexes"""
         self.changerGrilleClicked.emit()
-        
-        
-    def mettre_a_jour(self, valeurs):
-        """mettre à jour la grille courant"""
+
+    resetClicked = pyqtSignal()
+    def reset(self):
+        """Rendre la grille à son état initial"""
+        self.resetClicked.emit()
+
+    resoudreClicked = pyqtSignal()
+    def resoudre(self):
+        """Résout la grille courant"""
+        self.resoudreClicked.emit()
+
+
+    def mettre_a_jour(self, valeurs: dict) -> None:
+        """Mettre à jour la grille courante"""
         for (i, j), case in self.grille.cases.items():
             if (j, i) in valeurs:
                 case.setText(str(valeurs[(j, i)]))
             else:
                 if not case.isReadOnly():
                     case.setText("")
-             
-                    
-    resetClicked = pyqtSignal()
-    def reset(self):
-        """Rendre la grille à son état initial"""
-        self.resetClicked.emit()
-        
-        
-    resoudreClicked = pyqtSignal()
-    def resoudre(self) : 
-        """Résout la grille courant"""
-        self.resoudreClicked.emit()
-        
-        
+
     def colorier_case(self, x: int, y: int, valide: bool) -> None:
-        """Colorie une case en rouge si invalide, noir si valide."""
+        """
+        Colorie le fond d'une case via VueGrille (jamais via QLineEdit).
+        Les cases fixes ne sont jamais recolorées.
+        """
         case = self.grille.cases.get((y, x))
-        if case and not case.isReadOnly() :
-            if valide:
-                case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
-            else:
-                case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: red;")
-    
-           
-## test de la vue ancien main mtn > main.py
+        if case and not case.isReadOnly():
+            couleur = None if valide else COULEUR_INVALIDE
+            self.grille.set_couleur_case(x, y, couleur)
+
+
+## test de la vue YAYYY !!!
 '''if __name__ == "__main__" :
     print("TEST : classe vue")
     app = QApplication(sys.argv)
