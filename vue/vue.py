@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
 from PyQt6.QtWidgets import QPushButton
 import sys, os
@@ -140,7 +140,7 @@ class VueGrilleAvecSaisie(QWidget):
 
 
 
-PADDING_FENETRE = 4
+PADDING_FENETRE = 20 # avant c est 4
 
 
 class VueNeonaure(QMainWindow):
@@ -155,6 +155,24 @@ class VueNeonaure(QMainWindow):
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
         
+        
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange : 
+            if not (self.windowState() & Qt.WindowState.WindowMaximized) and \
+                not (self.windowState() & Qt.WindowState.WindowMinimized) : 
+                    self._ajuster_taille()
+                    
+    def _ajuster_taille(self) -> None :
+        if hasattr(self, 'grille') and self.grille : 
+            if not self.isMaximized():
+                pad2 = PADDING_FENETRE * 2
+                menu_h = self.menuBar().sizeHint().height()
+                new_w = self.grille.width() + pad2
+                new_h = self.grille.height() + menu_h + pad2
+                self.setMinimumSize(new_w, new_h)
+                self.resize(new_w, new_h)
+            
     def _construire_menu(self) : 
         """Construire le bouton menu"""
         menu = self.menuBar().addMenu("Menu")
@@ -206,10 +224,16 @@ class VueNeonaure(QMainWindow):
             layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(widget)
             super().setCentralWidget(conteneur)
+            
+            self._ajuster_taille()
+            
             # if not self.isMaximized():
             #     pad2 = PADDING_FENETRE * 2
-            #     self.setMinimumSize(widget.width() + pad2, widget.height() + pad2)
-            #     self.resize(widget.width() + pad2, widget.height() + pad2)
+            #     menu_h = self.menuBar().sizeHint().height()
+            #     new_w = widget.width() + pad2
+            #     new_h = widget.height() + menu_h + pad2
+            #     self.setMinimumSize(new_w, new_h)
+            #     self.resize(new_w, new_h)
         else:
             super().setCentralWidget(widget)
 
