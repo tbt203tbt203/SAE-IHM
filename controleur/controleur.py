@@ -2,7 +2,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modele.case import Case
 from modele.grille import Grille
-from vue.vue import VueNeonaure
+from vue.vue import VueNeonaure, VueGrilleAvecSaisie
 from PyQt6.QtWidgets import QApplication, QFileDialog
 
 # --------------------------------------------------------------------------------
@@ -61,10 +61,15 @@ class Controleur() :
     def changer_grille(self) -> None : 
         """Charge une autre grille depuis le dossier Annexes"""
         chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "Annexes"), "JSON (*.json)")
-        if self.modele and chemin :
+        if chemin : 
             self.modele = Grille.depuis_json(chemin)
-            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
-            self.vue.mettre_a_jour(valeurs)
+            appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
+            valeurs = {(c.x, c.y) : c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            
+            self.vue.grille.caseModifiee.disconnect(self.modifierCase)
+            self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
+            self.vue.setCentralWidget(self.vue.grille)
+            self.vue.grille.caseModifiee.connect(self.modifierCase)
         
         
     def modifierCase(self, x: int, y: int, texte: str) -> None:
@@ -77,15 +82,23 @@ class Controleur() :
                     self.modele.poser_valeur(x, y, int(texte))
                 except ValueError : 
                     pass
+                
+            valide = self.modele.voisinage_valide(x, y)
+            self.vue.colorier_case(x, y, valide)
         
             
     def chargerSauvegarder(self) -> None:
         """Charger un fichier depuis le dossier sauvegarder"""
         chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
-        if self.modele and chemin:
-            self.modele.charger_sauvegarde(chemin)
-            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
-            self.vue.mettre_a_jour(valeurs)
+        if chemin : 
+            self.modele = Grille.charger_sauvegarde(chemin)
+            appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
+            valeurs = {(c.x, c.y) : c.valeur for m in self.modele.motifs for c in m.cases if c.valeurs != 0}
+            
+            self.vue.grille.caseModifiee.disconnect(self.modifierCase)
+            self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
+            self.vue.setCentralWidget(self.vue.grille)
+            self.vue.grille.caseModifiee.connect(self.modifierCase)
             
             
     def supprimer(self) -> None :
@@ -99,6 +112,7 @@ class Controleur() :
     #     """Choisir un niveau"""
     #     if self.modele : 
     #         self.modele.
+    
     
 # -------------------------------------------------------------------------- #
 # --- Main YAY!! : test du controleur

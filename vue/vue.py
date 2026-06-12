@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen, QColor
+from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
 import sys, os
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QPushButton
@@ -66,6 +66,7 @@ class VueGrilleAvecSaisie(QWidget):
         for i in range(LIGNES):
             for j in range(COLONNES):
                 case = QLineEdit(self)
+                case.setValidator(QIntValidator(1, 9))
                 case.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 case.setMaxLength(1)
                 case.setFixedSize(TAILLE_CELLULE - 2, TAILLE_CELLULE - 2)
@@ -76,6 +77,7 @@ class VueGrilleAvecSaisie(QWidget):
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
+                    case.setStyleSheet("background: #e0e0e0; border: none; font-size: 20px; color: #555555;")  # ← gris
     
     
                
@@ -131,11 +133,13 @@ class VueNeonaure(QMainWindow):
         """Sauvegarde un fichier JSON dans le dossier sauvegarder"""
         self.sauvegarderClicked.emit()
         
+        
     # charger un fichier json depuis Annexes ou Sauvegarde ? 
     chargerSauvegarderClicked = pyqtSignal()
     def charger(self):
         """Charger un fichier JSON depuis le dossier sauvegarder"""
         self.chargerSauvegarderClicked.emit()
+        
         
     changerGrilleClicked = pyqtSignal()
     def changerGrille(self) : 
@@ -158,10 +162,22 @@ class VueNeonaure(QMainWindow):
         """Rendre la grille à son état initial"""
         self.resetClicked.emit()
         
+        
     resoudreClicked = pyqtSignal()
     def resoudre(self) : 
         """Résout la grille courant"""
         self.resoudreClicked.emit()
+        
+        
+    def colorier_case(self, x: int, y: int, valide: bool) -> None:
+        """Colorie une case en rouge si invalide, noir si valide."""
+        case = self.grille.cases.get((y, x))
+        if case and not case.isReadOnly() :
+            if valide:
+                case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+            else:
+                case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: red;")
+    
            
 ## test de la vue ancien main mtn > main.py
 '''if __name__ == "__main__" :
