@@ -153,8 +153,9 @@ class Controleur() :
                     case_vue.setText(str(val))      # Mise à jour de la vue
                     case_vue.blockSignals(False)
                     
-        self.vue.set_titre(self._nom_grille, os.path.basename(chemin))  #titre
-            
+        self._nom_grille = nom_fichier
+        self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre   
+                 
     def supprimer(self) -> None :
         """Supprimer un fichier dans le dossier sauvegarder"""
         chemin, _ = QFileDialog.getOpenFileName(self.vue, "Supprimer", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
