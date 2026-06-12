@@ -11,6 +11,8 @@ COLONNES = 8
 TAILLE_CELLULE = 60
 MARGE = 10
 
+
+
 class VueGrille(QWidget):
 
     def __init__(self, appartenance_motifs):
@@ -44,9 +46,11 @@ class VueGrille(QWidget):
 
         painter.drawRect(MARGE, MARGE, COLONNES * TAILLE_CELLULE, LIGNES * TAILLE_CELLULE)
 
-class VueGrilleAvecSaisie(QWidget):
-    caseModifiee = pyqtSignal(int, int, str)
 
+
+class VueGrilleAvecSaisie(QWidget):
+    
+    caseModifiee = pyqtSignal(int, int, str)
 
     def __init__(self, appartenance_motifs, valeurs={}):
         super().__init__()
@@ -72,57 +76,92 @@ class VueGrilleAvecSaisie(QWidget):
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
-                
+    
+    
+               
 class VueNeonaure(QMainWindow):
 
     def __init__(self, appartenance_motifs, valeurs={}, modele=None):
         super().__init__()
+        
         self.setWindowTitle("Néonaure")
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
+        
         menu = self.menuBar().addMenu("Menu")
         menu.setStyleSheet("QMenu { background-color: black; color: white; border: 1px solid gray; } QMenu::item:selected { background-color: gray; color: white; } QMenu::item { padding: 4px 20px; }")
+        
+        # bouton sauvegarder (fichier JSON)
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
+        
+        # bouton charger (fichier JSON depuis le doissier sauvegarder)
         action_charger = menu.addAction("Charger")
         action_charger.triggered.connect(self.charger)
+        
+        # bouton jouer (fichier JSON depuis le dossier Annexes)
+        action_jouer = menu.addAction("Jouer")
+        action_jouer.triggered.connect(self.changerGrille)
+        
+        # bouton reset (l'état initial de grille)
         action_reset = menu.addAction("Reset")
         action_reset.triggered.connect(self.reset)
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
         btn_reset.clicked.connect(self.reset)
         self.menuBar().setCornerWidget(btn_reset)
+        
+        # bouton supprimer (un fichier JSON depuis le dossier sauvegarder)
         action_supprimer = menu.addAction("Supprimer")
         action_supprimer.triggered.connect(self.supprimer)
+        
+        # bouton resoudre (proposer une solution compléte de grille)
+        action_resoudre = menu.addAction("Resoudre")
+        action_resoudre.triggered.connect(self.resoudre)
 
 
     supprimerClicked = pyqtSignal()
     def supprimer(self) : 
+        """Supprimer un fichier dans le dossier sauvegarder"""
         self.supprimerClicked.emit()
         
     
-    sauvegarderClicked = pyqtSignal()
-    supprimerClicked = pyqtSignal()
-    
+    sauvegarderClicked = pyqtSignal()    
     def sauvegarder(self):
+        """Sauvegarde un fichier JSON dans le dossier sauvegarder"""
         self.sauvegarderClicked.emit()
         
+    # charger un fichier json depuis Annexes ou Sauvegarde ? 
     chargerSauvegarderClicked = pyqtSignal()
     def charger(self):
+        """Charger un fichier JSON depuis le dossier sauvegarder"""
         self.chargerSauvegarderClicked.emit()
+        
+    changerGrilleClicked = pyqtSignal()
+    def changerGrille(self) : 
+        """Charger un fichier JSON depuis le dossier Annexes"""
+        self.changerGrilleClicked.emit()
         
         
     def mettre_a_jour(self, valeurs):
+        """mettre à jour la grille courant"""
         for (i, j), case in self.grille.cases.items():
             if (j, i) in valeurs:
                 case.setText(str(valeurs[(j, i)]))
             else:
                 if not case.isReadOnly():
                     case.setText("")
+             
                     
     resetClicked = pyqtSignal()
     def reset(self):
+        """Rendre la grille à son état initial"""
         self.resetClicked.emit()
+        
+    resoudreClicked = pyqtSignal()
+    def resoudre(self) : 
+        """Résout la grille courant"""
+        self.resoudreClicked.emit()
            
 ## test de la vue ancien main mtn > main.py
 '''if __name__ == "__main__" :

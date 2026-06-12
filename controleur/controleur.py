@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modele.case import Case
 from modele.grille import Grille
 from vue.vue import VueNeonaure
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QFileDialog
 
 # --------------------------------------------------------------------------------
 # --- class Controleur
@@ -26,24 +26,18 @@ class Controleur() :
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
-        #self.vue.resoudreClicked.connect(self.resoudre)
-        #self.vue.resetClicked.connect(self.reset)
-        #self.vue.changerGrilleClicked.connect(self.changer_grille)
+        self.vue.resoudreClicked.connect(self.resoudre)
+        self.vue.resetClicked.connect(self.reset)
+        self.vue.changerGrilleClicked.connect(self.changer_grille)
+        self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
+        self.vue.grille.caseModifiee.connect(self.modifierCase)
         self.vue.supprimerClicked.connect(self.supprimer)
-        #self.vue.chargerSauvegarderClicked.connect(self.chargerSauvegarder)
-        self.vue.grille.caseModifiee.connect(self.remplir)
-
         # self.vue.niveauClicked.connect(self.niveau)
-        
-        
-    """def sauvegarder(self, chemin : str) -> None : 
-        if self.modele and chemin :
-            self.modele.sauvegarder(chemin)"""
            
            
     def sauvegarder(self) -> None:
-        from PyQt6.QtWidgets import QFileDialog
-        chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", "", "JSON (*.json)")
+        """Sauvegarder la grille dans le dossier sauvegarder"""
+        chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
         if self.modele and chemin:
             self.modele.sauvegarder(chemin)
             
@@ -52,43 +46,55 @@ class Controleur() :
         """Résout la grille et mettre à jour la vue"""
         if self.modele : 
             self.modele.resoudre()
-            # appeler vue !!!!
+            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            self.vue.mettre_a_jour(valeurs)
         
         
-    def reset(self) -> None : 
-        """Remet la grille à l'état initial """
-        if self.modele : 
+    def reset(self) -> None:
+        """Reset la grille"""
+        if self.modele:
             self.modele.reset()
-            # appeler vue !!!!
-        
-        
-    def changer_grille(self, chemin : str) -> None : 
-        """Charge une autre grille depuis un fichier JSON"""
-        self.modele = Grille.depuis_json(chemin)
-        # appeler vue !!!!
-        
+            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            self.vue.mettre_a_jour(valeurs)
             
-    def remplir(self, x: int, y: int, texte: str) -> None:
-        if self.modele and texte.isdigit():
-            try:
-                self.modele.poser_valeur(x, y, int(texte))
-            except ValueError:
-                pass
+        
+    def changer_grille(self) -> None : 
+        """Charge une autre grille depuis le dossier Annexes"""
+        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "Annexes"), "JSON (*.json)")
+        if self.modele and chemin :
+            self.modele = Grille.depuis_json(chemin)
+            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            self.vue.mettre_a_jour(valeurs)
         
         
-    def supprimer(self, case : Case) -> None :
-        """Effacer un fichier dans le dossier sauvegarder"""
+    def modifierCase(self, x: int, y: int, texte: str) -> None:
+        """Remplir ou Éffacer une case"""
         if self.modele : 
-            self.modele.effacer_valeur(case.x, case.y)
-            
+            if texte == "" :
+                self.modele.effacer_valeur(x, y)
+            elif texte.isdigit() :
+                try : 
+                    self.modele.poser_valeur(x, y, int(texte))
+                except ValueError : 
+                    pass
+        
             
     def chargerSauvegarder(self) -> None:
-        from PyQt6.QtWidgets import QFileDialog
-        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", "", "JSON (*.json)")
+        """Charger un fichier depuis le dossier sauvegarder"""
+        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
         if self.modele and chemin:
             self.modele.charger_sauvegarde(chemin)
+            valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
+            self.vue.mettre_a_jour(valeurs)
             
             
+    def supprimer(self) -> None :
+        """Supprimer un fichier dans le dossier sauvegarder"""
+        chemin, _ = QFileDialog.getOpenFileName(self.vue, "Supprimer", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
+        if chemin : 
+            os.remove(chemin)
+        
+        
     # def niveau(self, niveau : int) -> None :
     #     """Choisir un niveau"""
     #     if self.modele : 
