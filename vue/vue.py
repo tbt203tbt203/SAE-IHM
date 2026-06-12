@@ -139,30 +139,22 @@ class VueGrilleAvecSaisie(QWidget):
 
 
 
-PADDING_FENETRE = 4
-
-
 class VueNeonaure(QMainWindow):
 
     def __init__(self, appartenance_motifs: dict, valeurs: dict = {}, modele=None):
         super().__init__()
 
         self.setWindowTitle("Néonaure")
-        
-        self._construire_menu()
-        
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
-        
-    def _construire_menu(self) : 
-        """Construire le bouton menu"""
+
         menu = self.menuBar().addMenu("Menu")
         menu.setStyleSheet(
             "QMenu { background-color: black; color: white; border: 1px solid gray; }"
             "QMenu::item:selected { background-color: gray; color: white; }"
             "QMenu::item { padding: 4px 20px; }"
-            )
-        
+        )
+
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
 
@@ -184,52 +176,6 @@ class VueNeonaure(QMainWindow):
 
         action_resoudre = menu.addAction("Resoudre")
         action_resoudre.triggered.connect(self.resoudre)
-
-    def setCentralWidget(self, widget) -> None:
-        from PyQt6.QtWidgets import QWidget, QVBoxLayout
-        if isinstance(widget, VueGrilleAvecSaisie):
-            self.grille = widget
-            conteneur = QWidget()
-            layout = QVBoxLayout(conteneur)
-            layout.setContentsMargins(PADDING_FENETRE, PADDING_FENETRE, PADDING_FENETRE, PADDING_FENETRE)
-            layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(widget)
-            super().setCentralWidget(conteneur)
-            # if not self.isMaximized():
-            #     pad2 = PADDING_FENETRE * 2
-            #     self.setMinimumSize(widget.width() + pad2, widget.height() + pad2)
-            #     self.resize(widget.width() + pad2, widget.height() + pad2)
-        else:
-            super().setCentralWidget(widget)
-
-        # menu = self.menuBar().addMenu("Menu")
-        # menu.setStyleSheet(
-        #     "QMenu { background-color: black; color: white; border: 1px solid gray; }"
-        #     "QMenu::item:selected { background-color: gray; color: white; }"
-        #     "QMenu::item { padding: 4px 20px; }"
-        # )
-
-        # action_sauvegarder = menu.addAction("Sauvegarder")
-        # action_sauvegarder.triggered.connect(self.sauvegarder)
-
-        # action_charger = menu.addAction("Charger")
-        # action_charger.triggered.connect(self.charger)
-
-        # action_jouer = menu.addAction("Jouer")
-        # action_jouer.triggered.connect(self.changerGrille)
-
-        # action_reset = menu.addAction("Reset")
-        # action_reset.triggered.connect(self.reset)
-        # btn_reset = QPushButton("↺")
-        # btn_reset.setFlat(True)
-        # btn_reset.clicked.connect(self.reset)
-        # self.menuBar().setCornerWidget(btn_reset)
-
-        # action_supprimer = menu.addAction("Supprimer")
-        # action_supprimer.triggered.connect(self.supprimer)
-
-        # action_resoudre = menu.addAction("Resoudre")
-        # action_resoudre.triggered.connect(self.resoudre)
 
 
     supprimerClicked = pyqtSignal()

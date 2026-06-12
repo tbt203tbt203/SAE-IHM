@@ -21,9 +21,11 @@ class Controleur() :
     def __init__(self, chemin_json: str) -> None:
         self.fichier_original = os.path.basename(chemin_json)
         self.modele = Grille.depuis_json(chemin_json)
+        self._nom_grille = os.path.basename(chemin_json)  #titre
         appartenance = {(c.x, c.y): m.nom for m in self.modele.motifs for c in m.cases}
         valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
         self.vue = VueNeonaure(appartenance, valeurs)
+        self.vue.set_titre(self._nom_grille)          #titre
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
@@ -63,6 +65,8 @@ class Controleur() :
         """Charge une autre grille depuis le dossier Annexes"""
         chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "Annexes"), "JSON (*.json)")
         if chemin : 
+            self._nom_grille = os.path.basename(chemin)  #titre
+            self.vue.set_titre(self._nom_grille)          #titre
             self.fichier_original = os.path.basename(chemin)
             self.modele = Grille.depuis_json(chemin)
             appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
@@ -147,8 +151,11 @@ class Controleur() :
                 if case_vue:
                     case_vue.blockSignals(True)
                     case_vue.setText(str(val))      # Mise à jour de la vue
-                    case_vue.blockSignals(False)  
-            
+                    case_vue.blockSignals(False)
+                    
+        self._nom_grille = nom_fichier
+        self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre   
+                 
     def supprimer(self) -> None :
         """Supprimer un fichier dans le dossier sauvegarder"""
         chemin, _ = QFileDialog.getOpenFileName(self.vue, "Supprimer", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
