@@ -83,15 +83,20 @@ class Controleur() :
         if self.modele : 
             if texte == "" :
                 self.modele.effacer_valeur(x, y)
-            elif texte.isdigit() :
+            elif texte.isdigit() and int(texte) !=0:
                 try : 
                     self.modele.poser_valeur(x, y, int(texte))
                 except ValueError : 
-                    pass
+                    return
                 
-            valide = self.modele.voisinage_valide(x, y)
-            self.vue.colorier_case(x, y, valide)
-        
+            invalides = self.modele.cases_invalides()
+
+            self.vue.colorier_case(x, y, (x, y) not in invalides)
+
+            motif = self.modele.motif_de(x, y)
+            if motif:
+                for case in motif.cases:
+                    self.vue.colorier_case(case.x, case.y, (case.x, case.y) not in invalides)
             
     # def chargerSauvegarder(self) -> None:
     #     """Charger un fichier depuis le dossier sauvegarder"""
@@ -153,8 +158,8 @@ class Controleur() :
                     case_vue.setText(str(val))      # Mise à jour de la vue
                     case_vue.blockSignals(False)
                     
-        self._nom_grille = nom_fichier
-        self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre   
+            self._nom_grille = nom_fichier
+            self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre   
                  
     def supprimer(self) -> None :
         """Supprimer un fichier dans le dossier sauvegarder"""

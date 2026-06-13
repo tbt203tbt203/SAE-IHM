@@ -279,6 +279,12 @@ class Grille:
         """
         invalides = set()
 
+        #  Chiffre hors limite dans le motif
+        for motif in self.motifs:
+            for c in motif.cases:
+                if not c.est_vide() and c.valeur > motif.taille:
+                    invalides.add((c.x, c.y))
+                    
         # Conflits de voisinage
         for (x, y), case in self._cases.items():
             if not case.est_vide() and not self.voisinage_valide(x, y):
@@ -325,10 +331,10 @@ class Grille:
         if not isinstance(valeur, int):
             raise TypeError(f"La valeur doit être un entier, reçu : {valeur!r}")
 
-        motif = self.motif_de(x, y)
-        taille = motif.taille if motif else max(self.largeur, self.hauteur)
-        if not (1 <= valeur <= taille):
-            raise ValueError(f"La valeur doit être comprise entre 1 et {taille} pour cette case.")
+        # motif = self.motif_de(x, y)
+        # taille = motif.taille if motif else max(self.largeur, self.hauteur)
+        # if not (1 <= valeur <= taille):
+        #     raise ValueError(f"La valeur doit être comprise entre 1 et {taille} pour cette case.")
 
         if strict and not self.valeur_valide_pour(x, y, valeur):
             raise ValueError(f"La valeur {valeur} entre en conflit avec un voisin ou le motif.")
@@ -376,7 +382,7 @@ class Grille:
             if valeur in valeurs_voisins:
                 continue
 
-            case._valeur = valeur  # accès direct pour contourner la protection fixe
+            case._valeur = valeur  
             if self._backtrack(vides, index + 1):
                 return True
             case._valeur = 0

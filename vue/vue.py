@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
-from PyQt6.QtCore import Qt, pyqtSignal, QEvent
-from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QRegularExpression
+from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator
 from PyQt6.QtWidgets import QPushButton
 import sys, os
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QSizePolicy, QMenuBar
@@ -111,7 +111,7 @@ class VueGrilleAvecSaisie(QWidget):
         for i in range(lignes):
             for j in range(colonnes):
                 case = QLineEdit(self)
-                case.setValidator(QIntValidator(1, val_max))
+                case.setValidator(QRegularExpressionValidator(QRegularExpression("[1-9]")))
                 case.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 case.setMaxLength(1)
                 case.setFixedSize(TAILLE_CELLULE, TAILLE_CELLULE)
