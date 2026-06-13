@@ -405,6 +405,9 @@ class VueNeonaure(QMainWindow):
                 else:
                     if not case.isReadOnly():
                         case.setText("")
+                        
+                if not case.isReadOnly():
+                    self.grille.set_couleur_case(j, i, None)
                 case.blockSignals(False)
                 
     def colorier_case(self, x: int, y: int, valide: bool) -> None:
