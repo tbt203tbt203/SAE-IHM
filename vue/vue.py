@@ -4,7 +4,7 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressio
 from PyQt6.QtWidgets import QPushButton
 import sys, os
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QSizePolicy, QMenuBar
-
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QMessageBox
 
 TAILLE_CELLULE = 60
 MARGE = 10
@@ -12,6 +12,7 @@ MARGE = 10
 COULEUR_FIXE     = QColor(224, 224, 224)   
 COULEUR_INVALIDE = QColor(255, 204, 204)   
 COULEUR_VIDE     = QColor(255, 255, 255)   
+COULEUR_GAGNE    = QColor(167, 230, 167)   #vert grille terminé
 
 
 def _dimensions(appartenance_motifs: dict) -> tuple[int, int]:
@@ -136,6 +137,21 @@ class VueGrilleAvecSaisie(QWidget):
             self.grille.couleurs.pop((col, row), None)
         else:
             self.grille.couleurs[(col, row)] = couleur
+        self.grille.update()
+
+            
+    def colorier_tout_en_vert(self) -> None:
+        """Colore toutes les cases en vert (affichage quand la grille est terminée)."""
+        for (i, j) in self.cases:          # i = ligne (y), j = colonne (x)
+            self.grille.couleurs[(j, i)] = COULEUR_GAGNE
+        self.grille.update()
+
+    def reinitialiser_couleurs(self) -> None:
+        """Remet les couleurs de fond à l'état de départ : cases fixes en gris, le reste vide."""
+        self.grille.couleurs.clear()
+        for (i, j), case in self.cases.items():
+            if case.isReadOnly():          # case fixe (donnée du puzzle)
+                self.grille.couleurs[(j, i)] = COULEUR_FIXE
         self.grille.update()
 
 
@@ -300,15 +316,26 @@ class VueNeonaure(QMainWindow):
         self.resoudreClicked.emit()
 
 
-    def mettre_a_jour(self, valeurs: dict) -> None:
-        """Mettre à jour la grille courante"""
-        for (i, j), case in self.grille.cases.items():
-            if (j, i) in valeurs:
-                case.setText(str(valeurs[(j, i)]))
-            else:
-                if not case.isReadOnly():
-                    case.setText("")
+    #def mettre_a_jour(self, valeurs: dict) -> None:
+     #   """Mettre à jour la grille courante"""
+      #  for (i, j), case in self.grille.cases.items():
+       #     if (j, i) in valeurs:
+        #        case.setText(str(valeurs[(j, i)]))
+         #   else:
+          #      if not case.isReadOnly():
+           #         case.setText("")
 
+    def mettre_a_jour(self, valeurs: dict) -> None:
+            """Mettre à jour la grille courante"""
+            for (i, j), case in self.grille.cases.items():
+                case.blockSignals(True)   # MAJ programmée : on ne redéclenche pas caseModifiee
+                if (j, i) in valeurs:
+                    case.setText(str(valeurs[(j, i)]))
+                else:
+                    if not case.isReadOnly():
+                        case.setText("")
+                case.blockSignals(False)
+                
     def colorier_case(self, x: int, y: int, valide: bool) -> None:
         """
         Colorie le fond d'une case via VueGrille (jamais via QLineEdit).
@@ -322,7 +349,40 @@ class VueNeonaure(QMainWindow):
     def set_titre(self, nom_grille : str, nom_sauvegarde: str = None) : 
         self.setWindowTitle(f"Néonaure - {nom_grille}  |  {nom_sauvegarde or '---'}")
 
+    def afficher_message_fin(self) -> None:
+        """Pop-up affiché quand la partie est terminée (grille finie ou résolue)."""
+        boite = QDialog(self)
+        boite.setWindowTitle("Néonaure")
+        layout = QVBoxLayout(boite)
 
+        label = QLabel("Jeu terminé ! Bien joué.")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 12px;")
+        layout.addWidget(label)
+
+        ligne_boutons = QHBoxLayout()
+        btn_recommencer = QPushButton("Recommencer")
+        btn_credit = QPushButton("Crédit")
+        ligne_boutons.addWidget(btn_recommencer)
+        ligne_boutons.addWidget(btn_credit)
+        layout.addLayout(ligne_boutons)
+
+        def _recommencer():
+            boite.accept()
+            self.reset()
+        btn_recommencer.clicked.connect(_recommencer)
+
+        btn_credit.clicked.connect(self.afficher_credits)
+
+        boite.exec()
+
+    def afficher_credits(self) -> None:
+        """Pop-up affichant les noms des auteurs du projet."""
+        noms = "Axel Guilbert\nThibault Frappart\nAmmal Najnan Bin Asri"
+        QMessageBox.information(self, "Crédits", noms)
+        
+        
+        
 ## test de la vue YAYYY !!!
 '''if __name__ == "__main__" :
     print("TEST : classe vue")
