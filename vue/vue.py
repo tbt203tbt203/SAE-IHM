@@ -105,6 +105,8 @@ class VueGrilleAvecSaisie(QWidget):
         self.grille.setParent(self)
         self.grille.move(0, 0)
         self.grille.lower()  
+        
+        self.caseActive : tuple[int, int] | None = None 
 
         val_max = max(colonnes, lignes)
 
@@ -121,13 +123,15 @@ class VueGrilleAvecSaisie(QWidget):
                 self.cases[(i, j)] = case
                 case.textChanged.connect(lambda texte, x=j, y=i: self.caseModifiee.emit(x, y, texte))
 
+                case.installEventFilter(self)
+                
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
                     self.grille.couleurs[(j, i)] = COULEUR_FIXE
                     case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
-
-
+                    
+        
     def set_couleur_case(self, col: int, row: int, couleur: QColor | None) -> None:
         """
         Met à jour la couleur de fond d'une case dans VueGrille et force le repaint.
@@ -137,6 +141,73 @@ class VueGrilleAvecSaisie(QWidget):
             self.grille.couleurs.pop((col, row), None)
         else:
             self.grille.couleurs[(col, row)] = couleur
+        self.grille.update()
+        
+            
+    def eventFilter(self, source, event) -> None :
+        
+        if event.type() == QEvent.Type.FocusIn : 
+            for (i, j), case in self.cases.items() :
+                if source is case : 
+                    
+                    if self.caseActive is not None : 
+                        ancien_col, ancien_row = self.caseActive
+                        ancien_case = self.cases.get((ancien_row, ancien_col))
+                        if ancien_case :
+                            if ancien_case.isReadOnly() : 
+                                ancien_case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
+                            else : 
+                                ancien_case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+                            
+                    self.caseActive = (j, i)
+                    case.setStyleSheet("background: transparent; border: 4px solid blue; font-size: 20px; color: black;")
+                    break
+                
+        if event.type() == QEvent.Type.FocusOut:
+            for (i, j), case in self.cases.items():
+                if source is case : 
+                    if case.isReadOnly():
+                        case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
+                    else : 
+                        case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+                    break
+        
+        if event.type() == QEvent.Type.KeyPress :
+            if self.caseActive is not None : 
+                col, row = self.caseActive   
+                     
+                if event.key() == Qt.Key.Key_Right : 
+                    nouveau_col, nouveau_row = col + 1, row
+                elif event.key() == Qt.Key.Key_Left : 
+                    nouveau_col, nouveau_row = col - 1, row 
+                elif event.key() == Qt.Key.Key_Down : 
+                    nouveau_col, nouveau_row = col, row + 1
+                elif event.key() == Qt.Key.Key_Up : 
+                    nouveau_col, nouveau_row = col, row - 1
+                else : 
+                    return super().eventFilter(source, event)
+        
+                nouvelle_case = self.cases.get((nouveau_row, nouveau_col))
+                if nouvelle_case :
+                    nouvelle_case.setFocus()
+                return True
+            
+        return super().eventFilter(source, event)
+
+
+            
+    def colorier_tout_en_vert(self) -> None:
+        """Colore toutes les cases en vert (affichage quand la grille est terminée)."""
+        for (i, j) in self.cases:          # i = ligne (y), j = colonne (x)
+            self.grille.couleurs[(j, i)] = COULEUR_GAGNE
+        self.grille.update()
+
+    def reinitialiser_couleurs(self) -> None:
+        """Remet les couleurs de fond à l'état de départ : cases fixes en gris, le reste vide."""
+        self.grille.couleurs.clear()
+        for (i, j), case in self.cases.items():
+            if case.isReadOnly():          # case fixe (donnée du puzzle)
+                self.grille.couleurs[(j, i)] = COULEUR_FIXE
         self.grille.update()
 
             
