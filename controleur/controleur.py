@@ -49,6 +49,7 @@ class Controleur() :
     def resoudre(self) -> None : 
         """Résout la grille et mettre à jour la vue"""
         if self.modele : 
+            self.modele.reset()
             self.modele.resoudre()
             valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
             self.vue.mettre_a_jour(valeurs)

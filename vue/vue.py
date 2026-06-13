@@ -182,17 +182,15 @@ class VueNeonaure(QMainWindow):
             "QMenu::item { padding: 4px 20px; }"
             )
         
+        action_jouer = menu.addAction("Jouer")
+        action_jouer.triggered.connect(self.changerGrille)
+        
+        action_charger = menu.addAction("Charger")
+        action_charger.triggered.connect(self.charger)
+        
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
 
-        action_charger = menu.addAction("Charger")
-        action_charger.triggered.connect(self.charger)
-
-        action_jouer = menu.addAction("Jouer")
-        action_jouer.triggered.connect(self.changerGrille)
-
-        action_reset = menu.addAction("Reset")
-        action_reset.triggered.connect(self.reset)
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
         btn_reset.clicked.connect(self.reset)
@@ -213,6 +211,10 @@ class VueNeonaure(QMainWindow):
 
         action_resoudre = menu.addAction("Resoudre")
         action_resoudre.triggered.connect(self.resoudre)
+        
+        action_reset = menu.addAction("Reset")
+        action_reset.triggered.connect(self.reset)
+        
 
     def setCentralWidget(self, widget) -> None:
         from PyQt6.QtWidgets import QWidget, QVBoxLayout
