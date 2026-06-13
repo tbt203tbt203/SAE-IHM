@@ -92,6 +92,9 @@ class Controleur() :
             invalides = self.modele.cases_invalides()
 
             self.vue.colorier_case(x, y, (x, y) not in invalides)
+            
+            for voisin in self.modele.get_voisins(x, y):
+                self.vue.colorier_case(voisin.x, voisin.y, (voisin.x, voisin.y) not in invalides)
 
             motif = self.modele.motif_de(x, y)
             if motif:
