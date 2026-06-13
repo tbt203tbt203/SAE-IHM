@@ -105,6 +105,7 @@ class VueGrilleAvecSaisie(QWidget):
         self.grille.setParent(self)
         self.grille.move(0, 0)
         self.grille.lower()  
+        
         self.caseActive : tuple[int, int] | None = None 
 
         val_max = max(colonnes, lignes)
@@ -122,13 +123,15 @@ class VueGrilleAvecSaisie(QWidget):
                 self.cases[(i, j)] = case
                 case.textChanged.connect(lambda texte, x=j, y=i: self.caseModifiee.emit(x, y, texte))
 
+                case.installEventFilter(self)
+                
                 if (j, i) in valeurs:
                     case.setText(str(valeurs[(j, i)]))
                     case.setReadOnly(True)
                     self.grille.couleurs[(j, i)] = COULEUR_FIXE
                     case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
-
-
+                    
+        
     def set_couleur_case(self, col: int, row: int, couleur: QColor | None) -> None:
         """
         Met à jour la couleur de fond d'une case dans VueGrille et force le repaint.
@@ -138,6 +141,88 @@ class VueGrilleAvecSaisie(QWidget):
             self.grille.couleurs.pop((col, row), None)
         else:
             self.grille.couleurs[(col, row)] = couleur
+        self.grille.update()
+        
+            
+    def eventFilter(self, source, event) -> None :
+        
+        if event.type() == QEvent.Type.FocusIn : 
+            for (i, j), case in self.cases.items() :
+                if source is case : 
+                    
+                    if self.caseActive is not None : 
+                        ancien_col, ancien_row = self.caseActive
+                        ancien_case = self.cases.get((ancien_row, ancien_col))
+                        if ancien_case :
+                            if ancien_case.isReadOnly() : 
+                                ancien_case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
+                            else : 
+                                ancien_case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+                            
+                    self.caseActive = (j, i)
+                    case.setStyleSheet("background: transparent; border: 4px solid blue; font-size: 20px; color: black;")
+                    break
+                
+        if event.type() == QEvent.Type.FocusOut:
+            for (i, j), case in self.cases.items():
+                if source is case : 
+                    if case.isReadOnly():
+                        case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: #555555;")
+                    else : 
+                        case.setStyleSheet("background: transparent; border: none; font-size: 20px; color: black;")
+                    break
+        
+        if event.type() == QEvent.Type.KeyPress :
+            if self.caseActive is not None : 
+                col, row = self.caseActive   
+                     
+                if event.key() == Qt.Key.Key_Right : 
+                    nouveau_col, nouveau_row = col + 1, row
+                elif event.key() == Qt.Key.Key_Left : 
+                    nouveau_col, nouveau_row = col - 1, row 
+                elif event.key() == Qt.Key.Key_Down : 
+                    nouveau_col, nouveau_row = col, row + 1
+                elif event.key() == Qt.Key.Key_Up : 
+                    nouveau_col, nouveau_row = col, row - 1
+                else : 
+                    return super().eventFilter(source, event)
+        
+                nouvelle_case = self.cases.get((nouveau_row, nouveau_col))
+                if nouvelle_case :
+                    nouvelle_case.setFocus()
+                return True
+            
+        return super().eventFilter(source, event)
+
+
+            
+    def colorier_tout_en_vert(self) -> None:
+        """Colore toutes les cases en vert (affichage quand la grille est terminée)."""
+        for (i, j) in self.cases:          # i = ligne (y), j = colonne (x)
+            self.grille.couleurs[(j, i)] = COULEUR_GAGNE
+        self.grille.update()
+
+    def reinitialiser_couleurs(self) -> None:
+        """Remet les couleurs de fond à l'état de départ : cases fixes en gris, le reste vide."""
+        self.grille.couleurs.clear()
+        for (i, j), case in self.cases.items():
+            if case.isReadOnly():          # case fixe (donnée du puzzle)
+                self.grille.couleurs[(j, i)] = COULEUR_FIXE
+        self.grille.update()
+
+            
+    def colorier_tout_en_vert(self) -> None:
+        """Colore toutes les cases en vert (affichage quand la grille est terminée)."""
+        for (i, j) in self.cases:          # i = ligne (y), j = colonne (x)
+            self.grille.couleurs[(j, i)] = COULEUR_GAGNE
+        self.grille.update()
+
+    def reinitialiser_couleurs(self) -> None:
+        """Remet les couleurs de fond à l'état de départ : cases fixes en gris, le reste vide."""
+        self.grille.couleurs.clear()
+        for (i, j), case in self.cases.items():
+            if case.isReadOnly():          # case fixe (donnée du puzzle)
+                self.grille.couleurs[(j, i)] = COULEUR_FIXE
         self.grille.update()
 
 
@@ -184,17 +269,15 @@ class VueNeonaure(QMainWindow):
             "QMenu::item { padding: 4px 20px; }"
             )
         
+        action_jouer = menu.addAction("Jouer")
+        action_jouer.triggered.connect(self.changerGrille)
+        
+        action_charger = menu.addAction("Charger")
+        action_charger.triggered.connect(self.charger)
+        
         action_sauvegarder = menu.addAction("Sauvegarder")
         action_sauvegarder.triggered.connect(self.sauvegarder)
 
-        action_charger = menu.addAction("Charger")
-        action_charger.triggered.connect(self.charger)
-
-        action_jouer = menu.addAction("Jouer")
-        action_jouer.triggered.connect(self.changerGrille)
-
-        action_reset = menu.addAction("Reset")
-        action_reset.triggered.connect(self.reset)
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
         btn_reset.clicked.connect(self.reset)
@@ -215,6 +298,10 @@ class VueNeonaure(QMainWindow):
 
         action_resoudre = menu.addAction("Resoudre")
         action_resoudre.triggered.connect(self.resoudre)
+        
+        action_reset = menu.addAction("Reset")
+        action_reset.triggered.connect(self.reset)
+        
 
     def setCentralWidget(self, widget) -> None:
         from PyQt6.QtWidgets import QWidget, QVBoxLayout
@@ -300,32 +387,26 @@ class VueNeonaure(QMainWindow):
         self.resoudreClicked.emit()
 
 
-    # def mettre_a_jour(self, valeurs: dict) -> None:
-    #     """Mettre à jour la grille courante"""
-    #     for (i, j), case in self.grille.cases.items():
-    #         if (j, i) in valeurs:
-    #             case.setText(str(valeurs[(j, i)]))
-    #         else:
-    #             if not case.isReadOnly():
-    #                 case.setText("")
-
+    #def mettre_a_jour(self, valeurs: dict) -> None:
+     #   """Mettre à jour la grille courante"""
+      #  for (i, j), case in self.grille.cases.items():
+       #     if (j, i) in valeurs:
+        #        case.setText(str(valeurs[(j, i)]))
+         #   else:
+          #      if not case.isReadOnly():
+           #         case.setText("")
 
     def mettre_a_jour(self, valeurs: dict) -> None:
-        """Mettre à jour la grille courante"""
-        for (i, j), case in self.grille.cases.items():
-            case.blockSignals(True)
-        
-            if (j, i) in valeurs:
-                case.setText(str(valeurs[(j, i)]))
-            else:
-                if not case.isReadOnly():
-                    case.setText("")
+            """Mettre à jour la grille courante"""
+            for (i, j), case in self.grille.cases.items():
+                case.blockSignals(True)   # MAJ programmée : on ne redéclenche pas caseModifiee
+                if (j, i) in valeurs:
+                    case.setText(str(valeurs[(j, i)]))
+                else:
+                    if not case.isReadOnly():
+                        case.setText("")
+                case.blockSignals(False)
                 
-            if not case.isReadOnly():
-                self.grille.set_couleur_case(j, i, None)
-            
-            case.blockSignals(False) 
-            
     def colorier_case(self, x: int, y: int, valide: bool) -> None:
         """
         Colorie le fond d'une case via VueGrille (jamais via QLineEdit).
@@ -339,7 +420,40 @@ class VueNeonaure(QMainWindow):
     def set_titre(self, nom_grille : str, nom_sauvegarde: str = None) : 
         self.setWindowTitle(f"Néonaure - {nom_grille}  |  {nom_sauvegarde or '---'}")
 
+    def afficher_message_fin(self) -> None:
+        """Pop-up affiché quand la partie est terminée (grille finie ou résolue)."""
+        boite = QDialog(self)
+        boite.setWindowTitle("Néonaure")
+        layout = QVBoxLayout(boite)
 
+        label = QLabel("Jeu terminé ! Bien joué.")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("font-size: 18px; font-weight: bold; padding: 12px;")
+        layout.addWidget(label)
+
+        ligne_boutons = QHBoxLayout()
+        btn_recommencer = QPushButton("Recommencer")
+        btn_credit = QPushButton("Crédit")
+        ligne_boutons.addWidget(btn_recommencer)
+        ligne_boutons.addWidget(btn_credit)
+        layout.addLayout(ligne_boutons)
+
+        def _recommencer():
+            boite.accept()
+            self.reset()
+        btn_recommencer.clicked.connect(_recommencer)
+
+        btn_credit.clicked.connect(self.afficher_credits)
+
+        boite.exec()
+
+    def afficher_credits(self) -> None:
+        """Pop-up affichant les noms des auteurs du projet."""
+        noms = "Axel Guilbert\nThibault Frappart\nAmmal Najnan Bin Asri"
+        QMessageBox.information(self, "Crédits", noms)
+        
+        
+        
 ## test de la vue YAYYY !!!
 '''if __name__ == "__main__" :
     print("TEST : classe vue")
