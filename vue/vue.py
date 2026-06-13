@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit
+from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit, QWidgetAction, QLabel, QHBoxLayout
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QRegularExpression
-from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator
+from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator, QShortcut, QKeySequence
 from PyQt6.QtWidgets import QPushButton
 import sys, os
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QSizePolicy, QMenuBar
@@ -267,16 +267,20 @@ class VueNeonaure(QMainWindow):
             "QMenu { background-color: black; color: white; border: 1px solid gray; }"
             "QMenu::item:selected { background-color: gray; color: white; }"
             "QMenu::item { padding: 4px 20px; }"
+            "QMenu::item::shortcut { color: #888888; }"
             )
         
-        action_jouer = menu.addAction("Jouer")
-        action_jouer.triggered.connect(self.changerGrille)
+        # action_jouer = menu.addAction("Jouer")
+        # action_jouer.triggered.connect(self.changerGrille)
+        # action_jouer.setShortcut("Ctrl+O")
         
-        action_charger = menu.addAction("Charger")
-        action_charger.triggered.connect(self.charger)
+        # action_charger = menu.addAction("Charger")
+        # action_charger.triggered.connect(self.charger)
+        # action_charger.setShortcut("Ctrl+L")
         
-        action_sauvegarder = menu.addAction("Sauvegarder")
-        action_sauvegarder.triggered.connect(self.sauvegarder)
+        # action_sauvegarder = menu.addAction("Sauvegarder")
+        # action_sauvegarder.triggered.connect(self.sauvegarder)
+        # action_sauvegarder.setShortcut("Ctrl+S")
 
         btn_reset = QPushButton("↺")
         btn_reset.setFlat(True)
@@ -286,6 +290,7 @@ class VueNeonaure(QMainWindow):
         btn_resoudre = QPushButton("💡")
         btn_resoudre.setFlat(True)
         btn_resoudre.clicked.connect(self.resoudre)
+        
         coin = QWidget()
         layout = QHBoxLayout(coin)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -293,15 +298,56 @@ class VueNeonaure(QMainWindow):
         layout.addWidget(btn_reset)
         self.menuBar().setCornerWidget(coin)
 
-        action_supprimer = menu.addAction("Supprimer")
-        action_supprimer.triggered.connect(self.supprimer)
+        # action_supprimer = menu.addAction("Supprimer")
+        # action_supprimer.triggered.connect(self.supprimer)
+        # action_supprimer.setShortcut("Ctrl+D")
 
-        action_resoudre = menu.addAction("Resoudre")
-        action_resoudre.triggered.connect(self.resoudre)
+        # action_resoudre = menu.addAction("Resoudre")
+        # action_resoudre.triggered.connect(self.resoudre)
+        # action_resoudre.setShortcut("Ctrl+R")
         
-        action_reset = menu.addAction("Reset")
-        action_reset.triggered.connect(self.reset)
+        # action_reset = menu.addAction("Reset")
+        # action_reset.triggered.connect(self.reset)
+        # action_reset.setShortcut("Ctrl+Shift+Z")
         
+        self._ajouter_action_menu(menu, "Jouer", "Ctrl+O", self.changerGrille)
+        self._ajouter_action_menu(menu, "Charger", "Ctrl+L", self.charger)
+        self._ajouter_action_menu(menu, "Sauvegarder", "Ctrl+S", self.sauvegarder)
+        self._ajouter_action_menu(menu, "Supprimer", "Ctrl+D", self.supprimer)
+        self._ajouter_action_menu(menu, "Resoudre", "Ctrl+R", self.resoudre)
+        self._ajouter_action_menu(menu, "Reset", "Ctrl+Shift+R", self.reset)
+        
+    
+        
+    def _ajouter_action_menu(self, menu, texte: str, raccourci: str, slot) -> None:
+        """Crée une action de menu avec texte blanc et raccourci gris."""
+        conteneur = QWidget()
+        conteneur.setFixedHeight(28)
+        layout = QHBoxLayout(conteneur)
+        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setSpacing(0)
+
+        label_texte = QLabel(texte)
+        label_texte.setStyleSheet("color: white; background: transparent; font-size: 13px;")
+
+        label_raccourci = QLabel(raccourci)
+        label_raccourci.setStyleSheet("color: #888888; background: transparent; font-size: 13px;")
+        label_raccourci.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        layout.addWidget(label_texte)
+        layout.addStretch()
+        layout.addWidget(label_raccourci)
+
+        conteneur.setStyleSheet("QWidget:hover { background-color: gray; }")
+
+        action = QWidgetAction(menu)
+        action.setDefaultWidget(conteneur)
+        action.triggered.connect(slot)
+        menu.addAction(action)
+
+        shortcut = QShortcut(QKeySequence(raccourci), self)
+        shortcut.activated.connect(slot)
+
 
     def setCentralWidget(self, widget) -> None:
         from PyQt6.QtWidgets import QWidget, QVBoxLayout
@@ -406,7 +452,7 @@ class VueNeonaure(QMainWindow):
                     if not case.isReadOnly():
                         case.setText("")
                         
-                if not case.isReadOnly():
+                if not case.isReadOnly() :
                     self.grille.set_couleur_case(j, i, None)
                 case.blockSignals(False)
                 
