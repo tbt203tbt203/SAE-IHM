@@ -26,6 +26,7 @@ class Controleur() :
         valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
         self.vue = VueNeonaure(appartenance, valeurs)
         self.vue.set_titre(self._nom_grille)          #titre
+        self._jeu_termine = False   # évite d'afficher le pop-up de fin plusieurs fois
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
@@ -51,14 +52,16 @@ class Controleur() :
             self.modele.resoudre()
             valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
             self.vue.mettre_a_jour(valeurs)
-        
-        
+            self.verifier_jeu_termine()
+                        
     def reset(self) -> None:
         """Reset la grille"""
         if self.modele:
             self.modele.reset()
             valeurs = {(c.x, c.y): c.valeur for m in self.modele.motifs for c in m.cases if c.valeur != 0}
             self.vue.mettre_a_jour(valeurs)
+            self.vue.grille.reinitialiser_couleurs()   # enlève le vert (et les rouges)
+            self._jeu_termine = False
             
         
     def changer_grille(self) -> None : 
@@ -67,6 +70,7 @@ class Controleur() :
         if chemin : 
             self._nom_grille = os.path.basename(chemin)  #titre
             self.vue.set_titre(self._nom_grille)          #titre
+            self._jeu_termine = False
             self.fichier_original = os.path.basename(chemin)
             self.modele = Grille.depuis_json(chemin)
             appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
@@ -89,6 +93,10 @@ class Controleur() :
                 except ValueError : 
                     return
                 
+            # si la grille était gagnée et qu'on la modifie, on retire le vert
+            if self._jeu_termine:
+                self._jeu_termine = False
+                self.vue.grille.reinitialiser_couleurs()   
             invalides = self.modele.cases_invalides()
 
             self.vue.colorier_case(x, y, (x, y) not in invalides)
@@ -101,6 +109,14 @@ class Controleur() :
                 for case in motif.cases:
                     self.vue.colorier_case(case.x, case.y, (case.x, case.y) not in invalides)
             
+            self.verifier_jeu_termine()
+
+    def verifier_jeu_termine(self) -> None:
+        """Affiche le pop-up de fin si la grille est entièrement et correctement remplie."""
+        if self.modele and self.modele.est_complete() and not self._jeu_termine:
+            self._jeu_termine = True
+            self.vue.grille.colorier_tout_en_vert()
+            self.vue.afficher_message_fin()
     # def chargerSauvegarder(self) -> None:
     #     """Charger un fichier depuis le dossier sauvegarder"""
     #     chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
@@ -162,7 +178,9 @@ class Controleur() :
                     case_vue.blockSignals(False)
                     
             self._nom_grille = nom_fichier
-            self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre   
+            self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre 
+            self._jeu_termine = False
+ 
                  
     def supprimer(self) -> None :
         """Supprimer un fichier dans le dossier sauvegarder"""
