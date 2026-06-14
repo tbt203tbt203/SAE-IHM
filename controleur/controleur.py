@@ -43,6 +43,9 @@ class Controleur() :
         self.vue.annulerClicked.connect(self.annuler)
         self.vue.retablirClicked.connect(self.retablir)
            
+        #Connexion des signaux d'annulation de la grille
+        self.vue.grille.retablirRequested.connect(self.retablir)
+        self.vue.grille.annulerRequested.connect(self.annuler)
            
     def sauvegarder(self) -> None:
         """Sauvegarder la grille dans le dossier sauvegarder"""
@@ -191,6 +194,8 @@ class Controleur() :
             self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
             self.vue.setCentralWidget(self.vue.grille)
             self.vue.grille.caseModifiee.connect(self.modifierCase)
+            self.vue.grille.retablirRequested.connect(self.retablir)
+            self.vue.grille.annulerRequested.connect(self.annuler)
             
             # 3. On rejoue les coups du joueur par-dessus
             for x, y, val in data.get("coups_joueur", []):

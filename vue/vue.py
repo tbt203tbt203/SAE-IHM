@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit, QWidgetAction, QLabel, QHBoxLayout
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QRegularExpression
-from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator, QShortcut, QKeySequence
+from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator, QShortcut, QKeySequence, QKeyEvent
 from PyQt6.QtWidgets import QPushButton
 import sys, os
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget, QSizePolicy, QMenuBar
@@ -92,6 +92,8 @@ class VueGrille(QWidget):
 class VueGrilleAvecSaisie(QWidget):
 
     caseModifiee = pyqtSignal(int, int, str)
+    annulerRequested = pyqtSignal()
+    retablirRequested = pyqtSignal()
 
     def __init__(self, appartenance_motifs: dict, valeurs: dict = {}):
         super().__init__()
@@ -173,6 +175,16 @@ class VueGrilleAvecSaisie(QWidget):
                     break
         
         if event.type() == QEvent.Type.KeyPress :
+            
+            if isinstance(event, QKeyEvent):
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    if event.key() == Qt.Key.Key_Y:
+                        self.retablirRequested.emit()
+                        return True
+                    if event.key() == Qt.Key.Key_Z:
+                        self.annulerRequested.emit()
+                        return True
+            
             if self.caseActive is not None : 
                 col, row = self.caseActive   
                      
