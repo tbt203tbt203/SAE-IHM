@@ -29,6 +29,9 @@ class Controleur() :
         self._jeu_termine = False   # évite d'afficher le pop-up de fin plusieurs fois
         
         self._chemin_sauvegarde = None 
+        self._en_cours_annulation = False #gestion de l'annulation des coups
+
+    
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
@@ -39,7 +42,12 @@ class Controleur() :
         self.vue.grille.caseModifiee.connect(self.modifierCase)
         self.vue.supprimerClicked.connect(self.supprimer)
         # self.vue.niveauClicked.connect(self.niveau)
+        self.vue.annulerClicked.connect(self.annuler)
+        self.vue.retablirClicked.connect(self.retablir)
            
+        #Connexion des signaux d'annulation de la grille
+        self.vue.grille.retablirRequested.connect(self.retablir)
+        self.vue.grille.annulerRequested.connect(self.annuler)
            
     # def sauvegarder(self) -> None:
     #     """Sauvegarder la grille dans le dossier sauvegarder"""
@@ -81,6 +89,9 @@ class Controleur() :
             self.vue.mettre_a_jour(valeurs)
             self.vue.grille.reinitialiser_couleurs()   # enlève le vert (et les rouges)
             self._jeu_termine = False
+            #Réinitialise l'historique des coups
+            self.modele._historique = []
+            self.modele._index_historique = -1
             
         
     def changer_grille(self) -> None : 
@@ -93,6 +104,8 @@ class Controleur() :
             
             self._chemin_sauvegarde = None 
             self.vue._jeu_sauvegarde = False
+            self.modele._historique = []
+            self.modele._index_historique = -1
             
             self.fichier_original = os.path.basename(chemin)
             self.modele = Grille.depuis_json(chemin)
@@ -111,11 +124,22 @@ class Controleur() :
         self.vue._jeu_sauvegarde = False 
         
         if self.modele : 
+            case = self.modele.get_case(x,y)
+            ancienne = case._valeur if case else 0
+            
             if texte == "" :
                 self.modele.effacer_valeur(x, y)
+                
+                if not self._en_cours_annulation:
+                    self.modele.enregistrer_coup(x, y, ancienne, 0)
             elif texte.isdigit() and int(texte) !=0:
                 try : 
-                    self.modele.poser_valeur(x, y, int(texte))
+                    nouvelle = int(texte)
+                    self.modele.poser_valeur(x, y, nouvelle)
+                    
+                    if not self._en_cours_annulation:
+                        self.modele.enregistrer_coup(x, y, ancienne, nouvelle)
+                
                 except ValueError : 
                     return
                 
@@ -194,6 +218,8 @@ class Controleur() :
             self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
             self.vue.setCentralWidget(self.vue.grille)
             self.vue.grille.caseModifiee.connect(self.modifierCase)
+            self.vue.grille.retablirRequested.connect(self.retablir)
+            self.vue.grille.annulerRequested.connect(self.annuler)
             
             # 3. On rejoue les coups du joueur par-dessus
             for x, y, val in data.get("coups_joueur", []):
@@ -218,7 +244,41 @@ class Controleur() :
         if chemin : 
             os.remove(chemin)
         
-        
+     
+     
+     
+    def annuler(self) -> None:
+        if not self.modele:
+            return
+        resultat = self.modele.annuler()
+        if resultat:
+            x, y, valeur = resultat
+            case_vue = self.vue.grille.cases.get((y, x))
+            if case_vue:
+                case_vue.blockSignals(True)
+                case_vue.setText(str(valeur) if valeur != 0 else "")
+                case_vue.blockSignals(False)
+            self._en_cours_annulation = True
+            self.modifierCase(x, y, str(valeur) if valeur != 0 else "")
+            self._en_cours_annulation = False
+
+    def retablir(self) -> None:
+        if not self.modele:
+            return
+        resultat = self.modele.retablir()
+        if resultat:
+            x, y, valeur = resultat
+            case_vue = self.vue.grille.cases.get((y, x))
+            if case_vue:
+                case_vue.blockSignals(True)
+                case_vue.setText(str(valeur) if valeur != 0 else "")
+                case_vue.blockSignals(False)
+            self._en_cours_annulation = True
+            self.modifierCase(x, y, str(valeur) if valeur != 0 else "")
+            self._en_cours_annulation = False   
+            
+            
+            
     # def niveau(self, niveau : int) -> None :
     #     """Choisir un niveau"""
     #     if self.modele : 
