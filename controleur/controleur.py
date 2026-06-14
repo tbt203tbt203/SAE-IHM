@@ -116,6 +116,8 @@ class Controleur() :
             self.vue.grille = VueGrilleAvecSaisie(appartenance, valeurs)
             self.vue.setCentralWidget(self.vue.grille)
             self.vue.grille.caseModifiee.connect(self.modifierCase)
+            self.vue.grille.annulerRequested.connect(self.annuler)
+            self.vue.grille.retablirRequested.connect(self.retablir)
         
         
     def modifierCase(self, x: int, y: int, texte: str) -> None:
