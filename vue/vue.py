@@ -347,6 +347,7 @@ class VueNeonaure(QMainWindow):
         self._ajouter_action_menu(menu, "Reset", "Ctrl+Shift+R", self.reset)
         self._ajouter_action_menu(menu, "Annuler", "Ctrl+Z", self.annuler)
         self._ajouter_action_menu(menu, "Rétablir", "Ctrl+Y", self.retablir)
+        self._ajouter_action_menu(menu, "Règles", "Ctrl+H", self.afficher_regles)
         
     
         
@@ -563,6 +564,47 @@ class VueNeonaure(QMainWindow):
         """Pop-up affichant les noms des auteurs du projet."""
         noms = "Axel Guilbert\nThibault Frappart\nAmmal Najnan Bin Asri"
         QMessageBox.information(self, "Crédits", noms)
+        
+    
+    def afficher_regles(self) -> None:
+        """Pop-up affichant les règles du jeu Néonaure."""
+        boite = QDialog(self)
+        boite.setWindowTitle("Règles du jeu — Néonaure")
+        boite.setMinimumWidth(420)
+        layout = QVBoxLayout(boite)
+        layout.setSpacing(10)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        titre = QLabel("Néonaure")
+        titre.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        titre.setStyleSheet("font-size: 17px; font-weight: bold; padding-bottom: 6px;")
+        layout.addWidget(titre)
+
+        regles = QLabel(
+            "La grille doit être remplie avec des chiffres\n"
+            "qui respectent trois contraintes :\n\n"
+            "  1.  Un seul chiffre par case.\n\n"
+            "  2.  Chaque chiffre doit être entouré\n"
+            "       de chiffres différents\n"
+            "       (y compris en diagonale).\n\n"
+            "  3.  Un motif de N cases (délimité\n"
+            "       en traits gras) doit contenir\n"
+            "       tous les chiffres de 1 à N."
+        )
+        regles.setStyleSheet("font-size: 13px;")
+        regles.setWordWrap(True)
+        layout.addWidget(regles)
+
+        btn_fermer = QPushButton("Fermer")
+        btn_fermer.clicked.connect(boite.accept)
+        btn_fermer.setFixedWidth(100)
+        ligne = QHBoxLayout()
+        ligne.addStretch()
+        ligne.addWidget(btn_fermer)
+        ligne.addStretch()
+        layout.addLayout(ligne)
+
+        boite.exec()
         
         
         
