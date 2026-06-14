@@ -27,6 +27,9 @@ class Controleur() :
         self.vue = VueNeonaure(appartenance, valeurs)
         self.vue.set_titre(self._nom_grille)          #titre
         self._jeu_termine = False   # évite d'afficher le pop-up de fin plusieurs fois
+        self._en_cours_annulation = False #gestion de l'annulation des coups
+
+    
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
@@ -37,6 +40,8 @@ class Controleur() :
         self.vue.grille.caseModifiee.connect(self.modifierCase)
         self.vue.supprimerClicked.connect(self.supprimer)
         # self.vue.niveauClicked.connect(self.niveau)
+        self.vue.annulerClicked.connect(self.annuler)
+        self.vue.retablirClicked.connect(self.retablir)
            
            
     def sauvegarder(self) -> None:
@@ -63,6 +68,9 @@ class Controleur() :
             self.vue.mettre_a_jour(valeurs)
             self.vue.grille.reinitialiser_couleurs()   # enlève le vert (et les rouges)
             self._jeu_termine = False
+            #Réinitialise l'historique des coups
+            self.modele._historique = []
+            self.modele._index_historique = -1
             
         
     def changer_grille(self) -> None : 
@@ -72,6 +80,10 @@ class Controleur() :
             self._nom_grille = os.path.basename(chemin)  #titre
             self.vue.set_titre(self._nom_grille)          #titre
             self._jeu_termine = False
+            
+            self.modele._historique = []
+            self.modele._index_historique = -1
+            
             self.fichier_original = os.path.basename(chemin)
             self.modele = Grille.depuis_json(chemin)
             appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
@@ -86,11 +98,22 @@ class Controleur() :
     def modifierCase(self, x: int, y: int, texte: str) -> None:
         """Remplir ou Éffacer une case"""
         if self.modele : 
+            case = self.modele.get_case(x,y)
+            ancienne = case._valeur if case else 0
+            
             if texte == "" :
                 self.modele.effacer_valeur(x, y)
+                
+                if not self._en_cours_annulation:
+                    self.modele.enregistrer_coup(x, y, ancienne, 0)
             elif texte.isdigit() and int(texte) !=0:
                 try : 
-                    self.modele.poser_valeur(x, y, int(texte))
+                    nouvelle = int(texte)
+                    self.modele.poser_valeur(x, y, nouvelle)
+                    
+                    if not self._en_cours_annulation:
+                        self.modele.enregistrer_coup(x, y, ancienne, nouvelle)
+                
                 except ValueError : 
                     return
                 
@@ -189,7 +212,41 @@ class Controleur() :
         if chemin : 
             os.remove(chemin)
         
-        
+     
+     
+     
+    def annuler(self) -> None:
+        if not self.modele:
+            return
+        resultat = self.modele.annuler()
+        if resultat:
+            x, y, valeur = resultat
+            case_vue = self.vue.grille.cases.get((y, x))
+            if case_vue:
+                case_vue.blockSignals(True)
+                case_vue.setText(str(valeur) if valeur != 0 else "")
+                case_vue.blockSignals(False)
+            self._en_cours_annulation = True
+            self.modifierCase(x, y, str(valeur) if valeur != 0 else "")
+            self._en_cours_annulation = False
+
+    def retablir(self) -> None:
+        if not self.modele:
+            return
+        resultat = self.modele.retablir()
+        if resultat:
+            x, y, valeur = resultat
+            case_vue = self.vue.grille.cases.get((y, x))
+            if case_vue:
+                case_vue.blockSignals(True)
+                case_vue.setText(str(valeur) if valeur != 0 else "")
+                case_vue.blockSignals(False)
+            self._en_cours_annulation = True
+            self.modifierCase(x, y, str(valeur) if valeur != 0 else "")
+            self._en_cours_annulation = False   
+            
+            
+            
     # def niveau(self, niveau : int) -> None :
     #     """Choisir un niveau"""
     #     if self.modele : 

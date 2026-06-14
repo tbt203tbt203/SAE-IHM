@@ -28,6 +28,9 @@ class Grille:
             for case in motif.cases:
                 self._cases[(case.x, case.y)] = case
                 
+        self._historique: list[tuple[int, int, int, int]] = []  # (x, y, ancienne_valeur, nouvelle_valeur)
+        self._index_historique: int = -1
+                
                 
                 
     # ================================================================== #
@@ -353,6 +356,34 @@ class Grille:
             case._valeur = 0
 
 
+    def enregistrer_coup(self, x: int, y: int, ancienne: int, nouvelle: int) -> None:
+        """Enregistre un coup dans l'historique, efface les coups annulés."""
+        # Si on a annulé des coups et qu'on en rejoue un nouveau, on efface la suite
+        self._historique = self._historique[:self._index_historique + 1]
+        self._historique.append((x, y, ancienne, nouvelle))
+        self._index_historique += 1
+
+    def annuler(self) -> tuple[int, int, int] | None:
+        """Annule le dernier coup. Retourne (x, y, valeur_a_afficher) ou None."""
+        if self._index_historique < 0:
+            return None
+        x, y, ancienne, _ = self._historique[self._index_historique]
+        self._index_historique -= 1
+        case = self.get_case(x, y)
+        if case and not case.fixe:
+            case._valeur = ancienne
+        return (x, y, ancienne)
+
+    def retablir(self) -> tuple[int, int, int] | None:
+        """Rétablit le coup suivant. Retourne (x, y, valeur_a_afficher) ou None."""
+        if self._index_historique >= len(self._historique) - 1:
+            return None
+        self._index_historique += 1
+        x, y, _, nouvelle = self._historique[self._index_historique]
+        case = self.get_case(x, y)
+        if case and not case.fixe:
+            case._valeur = nouvelle
+        return (x, y, nouvelle)
 
     # ------------------------------------------------------------------ #
     # Résolution par backtracking

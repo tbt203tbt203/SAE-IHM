@@ -291,12 +291,27 @@ class VueNeonaure(QMainWindow):
         btn_resoudre.setFlat(True)
         btn_resoudre.clicked.connect(self.resoudre)
         
+        btn_annuler = QPushButton("←")
+        btn_annuler.setFlat(True)
+        btn_annuler.clicked.connect(self.annuler)
+
+        btn_retablir = QPushButton("→")
+        btn_retablir.setFlat(True)
+        btn_retablir.clicked.connect(self.retablir)
+
+
+        
         coin = QWidget()
         layout = QHBoxLayout(coin)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(btn_resoudre)
         layout.addWidget(btn_reset)
         self.menuBar().setCornerWidget(coin)
+        
+        layout.addWidget(btn_annuler)
+        layout.addWidget(btn_retablir)
+        layout.addWidget(btn_resoudre)
+        layout.addWidget(btn_reset)
 
         # action_supprimer = menu.addAction("Supprimer")
         # action_supprimer.triggered.connect(self.supprimer)
@@ -316,6 +331,8 @@ class VueNeonaure(QMainWindow):
         self._ajouter_action_menu(menu, "Supprimer", "Ctrl+D", self.supprimer)
         self._ajouter_action_menu(menu, "Resoudre", "Ctrl+R", self.resoudre)
         self._ajouter_action_menu(menu, "Reset", "Ctrl+Shift+R", self.reset)
+        self._ajouter_action_menu(menu, "Annuler", "Ctrl+Z", self.annuler)
+        self._ajouter_action_menu(menu, "Rétablir", "Ctrl+Y", self.retablir)
         
     
         
@@ -431,6 +448,14 @@ class VueNeonaure(QMainWindow):
     def resoudre(self):
         """Résout la grille courant"""
         self.resoudreClicked.emit()
+        
+    annulerClicked = pyqtSignal()
+    def annuler(self):
+        self.annulerClicked.emit()
+
+    retablirClicked = pyqtSignal()
+    def retablir(self):
+        self.retablirClicked.emit()
 
 
     #def mettre_a_jour(self, valeurs: dict) -> None:
