@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit, QWidgetAction, QLabel, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QMainWindow, QApplication, QLineEdit, QWidgetAction, QLabel, QHBoxLayout, QMessageBox
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QRegularExpression
 from PyQt6.QtGui import QPainter, QPen, QColor, QIntValidator, QRegularExpressionValidator, QShortcut, QKeySequence
 from PyQt6.QtWidgets import QPushButton
@@ -239,6 +239,8 @@ class VueNeonaure(QMainWindow):
         
         self._construire_menu()
         
+        self._jeu_sauvegarde = False
+        
         self.grille = VueGrilleAvecSaisie(appartenance_motifs, valeurs)
         self.setCentralWidget(self.grille)
         
@@ -468,6 +470,30 @@ class VueNeonaure(QMainWindow):
             
     def set_titre(self, nom_grille : str, nom_sauvegarde: str = None) : 
         self.setWindowTitle(f"Néonaure - {nom_grille}  |  {nom_sauvegarde or '---'}")
+        
+        
+    def closeEvent(self, event) -> None:
+        """Intercepte la fermeture de la fenêtre."""
+        if not self._jeu_sauvegarde:
+            from PyQt6.QtWidgets import QMessageBox
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Quitter")
+            msg.setText("Des modifications non sauvegardées seront perdues.\nVoulez-vous sauvegarder avant de quitter ?")
+            btn_sauvegarder = msg.addButton("Sauvegarder", QMessageBox.ButtonRole.AcceptRole)
+            btn_quitter = msg.addButton("Quitter sans sauvegarder", QMessageBox.ButtonRole.DestructiveRole)
+            btn_annuler = msg.addButton("Annuler", QMessageBox.ButtonRole.RejectRole)
+            msg.exec()
+
+            if msg.clickedButton() == btn_sauvegarder:
+                self.sauvegarderClicked.emit()
+                event.accept()
+            elif msg.clickedButton() == btn_quitter:
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
+        
 
     def afficher_message_fin(self) -> None:
         """Pop-up affiché quand la partie est terminée (grille finie ou résolue)."""

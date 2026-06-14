@@ -27,6 +27,8 @@ class Controleur() :
         self.vue = VueNeonaure(appartenance, valeurs)
         self.vue.set_titre(self._nom_grille)          #titre
         self._jeu_termine = False   # évite d'afficher le pop-up de fin plusieurs fois
+        
+        self._chemin_sauvegarde = None 
     
         # signaux de la vue au controleur 
         self.vue.sauvegarderClicked.connect(self.sauvegarder)
@@ -39,11 +41,27 @@ class Controleur() :
         # self.vue.niveauClicked.connect(self.niveau)
            
            
+    # def sauvegarder(self) -> None:
+    #     """Sauvegarder la grille dans le dossier sauvegarder"""
+    #     chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
+    #     if self.modele and chemin:
+    #         self.modele.sauvegarder(chemin, self.fichier_original)
+            
+            
     def sauvegarder(self) -> None:
         """Sauvegarder la grille dans le dossier sauvegarder"""
-        chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
-        if self.modele and chemin:
-            self.modele.sauvegarder(chemin, self.fichier_original)
+        if self.modele:
+            if self._chemin_sauvegarde:
+                # fichier existe déjà → écraser directement
+                self.modele.sauvegarder(self._chemin_sauvegarde, self.fichier_original)
+                self.vue._jeu_sauvegarde = True
+            else:
+                # nouveau fichier → ouvrir le dialog
+                chemin, _ = QFileDialog.getSaveFileName(self.vue, "Sauvegarder", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
+                if chemin:
+                    self._chemin_sauvegarde = chemin
+                    self.modele.sauvegarder(chemin, self.fichier_original)
+                    self.vue._jeu_sauvegarde = True
             
                             
     def resoudre(self) -> None : 
@@ -72,6 +90,10 @@ class Controleur() :
             self._nom_grille = os.path.basename(chemin)  #titre
             self.vue.set_titre(self._nom_grille)          #titre
             self._jeu_termine = False
+            
+            self._chemin_sauvegarde = None 
+            self.vue._jeu_sauvegarde = False
+            
             self.fichier_original = os.path.basename(chemin)
             self.modele = Grille.depuis_json(chemin)
             appartenance = {(c.x, c.y) : m.nom for m in self.modele.motifs for c in m.cases}
@@ -85,6 +107,9 @@ class Controleur() :
         
     def modifierCase(self, x: int, y: int, texte: str) -> None:
         """Remplir ou Éffacer une case"""
+        
+        self.vue._jeu_sauvegarde = False 
+        
         if self.modele : 
             if texte == "" :
                 self.modele.effacer_valeur(x, y)
@@ -118,6 +143,7 @@ class Controleur() :
             self._jeu_termine = True
             self.vue.grille.colorier_tout_en_vert()
             self.vue.afficher_message_fin()
+            
     # def chargerSauvegarder(self) -> None:
     #     """Charger un fichier depuis le dossier sauvegarder"""
     #     chemin, _ = QFileDialog.getOpenFileName(self.vue, "Charger", os.path.join(sys.path[0], "sauvegarder"), "JSON (*.json)")
@@ -181,6 +207,9 @@ class Controleur() :
             self._nom_grille = nom_fichier
             self.vue.set_titre(nom_fichier, os.path.basename(chemin))  #titre 
             self._jeu_termine = False
+            
+            self._chemin_sauvegarde = chemin
+            self.vue._jeu_sauvegarde = True
  
                  
     def supprimer(self) -> None :
